@@ -5,10 +5,11 @@ const { useState } = React;
 function MachineCardPanel({ machineId, onClose }) {
   const { setActiveChannel, addToast } = useKobi();
   const machine = window.KobiData.machines[machineId];
+  const I = window.Icons;
   if (!machine) return null;
 
   const statusColor = machine.status === 'online' ? '#4CAF50' : '#FF9800';
-  const statusLabel = machine.status === 'online' ? '🟢 Online' : '🟡 Maintenance';
+  const statusLabel = machine.status === 'online' ? 'Online' : 'Maintenance';
 
   return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
     React.createElement('div', { style: { padding: '14px 16px', borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
@@ -18,11 +19,12 @@ function MachineCardPanel({ machineId, onClose }) {
     React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: 16 } },
       // Machine image placeholder
       React.createElement('div', { style: { height: 120, background: `linear-gradient(135deg, ${machine.color}22, ${machine.color}44)`, border: `1px solid ${machine.color}33`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, position: 'relative' } },
-        React.createElement('div', { style: { textAlign: 'center' } },
-          React.createElement('div', { style: { fontSize: 40 } }, machineId === 'siemens' ? '⚙️' : machineId === 'kuka' ? '🤖' : '✂️'),
-          React.createElement('div', { style: { fontSize: 10, color: machine.color, fontFamily: 'monospace', marginTop: 4, opacity: 0.7 } }, `// ${machine.type.toUpperCase()} //`)
+        React.createElement('div', { style: { textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 } },
+          React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+            machineId === 'siemens' ? I.gear(40, machine.color) : machineId === 'kuka' ? I.robot(40, machine.color) : I.cutter(40, machine.color)),
+          React.createElement('div', { style: { fontSize: 10, color: machine.color, fontFamily: 'monospace', opacity: 0.7 } }, `// ${machine.type.toUpperCase()} //`)
         ),
-        React.createElement('div', { style: { position: 'absolute', top: 10, right: 10, fontSize: 12, fontWeight: 600, color: statusColor } }, statusLabel)
+        React.createElement('div', { style: { position: 'absolute', top: 10, right: 10, fontSize: 12, fontWeight: 600, color: statusColor, display: 'flex', alignItems: 'center', gap: 6 } }, I.statusDot(8, statusColor), statusLabel)
       ),
 
       React.createElement('div', { style: { fontWeight: 800, fontSize: 16, color: '#1A2433', marginBottom: 4 } }, machine.name),
@@ -43,7 +45,7 @@ function MachineCardPanel({ machineId, onClose }) {
 
       // Knowledge stats
       React.createElement('div', { style: { background: '#F0F5FA', border: '1px solid #C5D9EE', borderRadius: 10, padding: '12px 14px', marginBottom: 16 } },
-        React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: '#1E3A5F', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 } }, '🧠 Knowledge Base'),
+        React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: '#1E3A5F', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 } }, I.brain(14, '#1E3A5F'), 'Knowledge Base'),
         React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 } },
           [
             ['Docs', machine.docsIndexed],
@@ -61,24 +63,25 @@ function MachineCardPanel({ machineId, onClose }) {
         React.createElement('button', {
           onClick: () => { setActiveChannel('incidents'); onClose(); },
           style: { width: '100%', padding: '9px 14px', background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#1E3A5F', textAlign: 'left' }
-        }, '🚨 View all incidents'),
+        }, React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 8 } }, I.alert(16, '#1E3A5F'), 'View all incidents')),
         React.createElement('button', {
           onClick: () => { setActiveChannel('docs-drop'); onClose(); },
           style: { width: '100%', padding: '9px 14px', background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#1E3A5F', textAlign: 'left' }
-        }, '📥 Upload docs')
+        }, React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 8 } }, I.upload(16, '#1E3A5F'), 'Upload docs'))
       )
     )
   );
 }
 
 function LogbookPanel({ onClose }) {
+  const I = window.Icons;
   const { incidents } = window.KobiData;
   const statusColors = { resolved: '#4CAF50', 'in-progress': '#FF9800', open: '#F44336', 'awaiting-approval': '#FF9800' };
   const sevColors = { critical: '#F44336', warning: '#FF9800', info: '#2196F3' };
 
   return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
     React.createElement('div', { style: { padding: '14px 16px', borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
-      React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433' } }, '📋 Maintenance Logbook'),
+      React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', display: 'flex', alignItems: 'center', gap: 8 } }, I.clipboardList(18, '#1A2433'), 'Maintenance Logbook'),
       React.createElement('button', { onClick: onClose, style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 20 } }, '×')
     ),
     React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: 12 } },
@@ -100,6 +103,7 @@ function LogbookPanel({ onClose }) {
 }
 
 function KnowledgePanel({ onClose }) {
+  const I = window.Icons;
   const [activeTab, setActiveTab] = useState('docs');
   const { docs: docsList } = window.KobiData || { docs: [] };
 
@@ -124,7 +128,11 @@ function KnowledgePanel({ onClose }) {
     { text: 'Siemens S7-1500 — motor replacement procedure not found', machine: 'Siemens S7-1500' },
   ];
 
-  const tabs = [{ id: 'docs', label: '📄 Indexed docs' }, { id: 'notes', label: '🧠 My notes' }, { id: 'gaps', label: '⚠️ Gaps' }];
+  const tabs = [
+    { id: 'docs', label: 'Indexed docs', icon: (c) => I.fileText(14, c) },
+    { id: 'notes', label: 'My notes', icon: (c) => I.brain(14, c) },
+    { id: 'gaps', label: 'Gaps', icon: (c) => I.alert(14, c) },
+  ];
 
   return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
     React.createElement('div', { style: { padding: '14px 16px 0', borderBottom: '1px solid #E8ECF0' } },
@@ -134,14 +142,14 @@ function KnowledgePanel({ onClose }) {
       ),
       React.createElement('div', { style: { display: 'flex', gap: 0 } },
         tabs.map(tab => React.createElement('button', {
-          key: tab.id, onClick: () => setActiveTab(tab.id),
-          style: { padding: '6px 12px', background: 'none', border: 'none', borderBottom: activeTab === tab.id ? '2px solid #1E3A5F' : '2px solid transparent', color: activeTab === tab.id ? '#1E3A5F' : '#8B97A3', fontWeight: activeTab === tab.id ? 700 : 400, cursor: 'pointer', fontSize: 12, transition: 'all 0.15s', whiteSpace: 'nowrap' }
-        }, tab.label))
+          key: tab.id, type: 'button', onClick: () => setActiveTab(tab.id),
+          style: { padding: '6px 12px', background: 'none', border: 'none', borderBottom: activeTab === tab.id ? '2px solid #1E3A5F' : '2px solid transparent', color: activeTab === tab.id ? '#1E3A5F' : '#8B97A3', fontWeight: activeTab === tab.id ? 700 : 400, cursor: 'pointer', fontSize: 12, transition: 'all 0.15s', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6 }
+        }, tab.icon(activeTab === tab.id ? '#1E3A5F' : '#8B97A3'), tab.label))
       )
     ),
     React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: 12 } },
       activeTab === 'docs' && indexedDocs.map((doc, i) => React.createElement('div', { key: i, style: { padding: '8px 10px', borderBottom: '1px solid #F0F2F4', display: 'flex', gap: 8 } },
-        React.createElement('span', { style: { fontSize: 16 } }, '📄'),
+        React.createElement('span', { style: { display: 'flex', flexShrink: 0 } }, I.fileText(16, '#1E3A5F')),
         React.createElement('div', { style: { flex: 1 } },
           React.createElement('div', { style: { fontSize: 13, color: '#1A2433', fontWeight: 500 } }, doc.name),
           React.createElement('div', { style: { fontSize: 11, color: '#8B97A3', marginTop: 2 } }, `${doc.machine} · ${doc.pages} pages · ${doc.date}`)

@@ -72,7 +72,7 @@ function MachineHome({ machineId, onAction }) {
         },
           machineId === 'siemens' ? I.gear(40, machine.color) :
           machineId === 'kuka'    ? I.robot(40, machine.color) :
-          I.wrench(40, machine.color)
+          I.cutter(40, machine.color)
         ),
         React.createElement('div', { style: { flex: 1 } },
           React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 } },

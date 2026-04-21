@@ -168,12 +168,13 @@ function IncidentsTable() {
 
 function AlertsPanel() {
   const { addToast } = useKobi();
+  const I = window.Icons;
   const [dismissed, setDismissed] = useState([]);
   const { predictiveAlerts } = window.KobiData;
   const visible = predictiveAlerts.filter(a => !dismissed.includes(a.id));
 
   return React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, overflow: 'hidden' } },
-    React.createElement('div', { style: { padding: '16px 18px', borderBottom: '1px solid #E8ECF0', fontWeight: 700, fontSize: 15, color: '#1A2433' } }, '⚡ Predictive Alerts'),
+    React.createElement('div', { style: { padding: '16px 18px', borderBottom: '1px solid #E8ECF0', fontWeight: 700, fontSize: 15, color: '#1A2433', display: 'flex', alignItems: 'center', gap: 8 } }, I && I.zap(18, '#FF9800'), 'Predictive Alerts'),
     React.createElement('div', { style: { padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 } },
       visible.length === 0
         ? React.createElement('div', { style: { color: '#8B97A3', fontSize: 13, padding: 8, textAlign: 'center' } }, 'All clear — no active alerts')
@@ -182,7 +183,7 @@ function AlertsPanel() {
               style: { background: alert.type === 'warning' ? '#FFF8E1' : '#E3F2FD', border: `1px solid ${alert.type === 'warning' ? '#FFD54F' : '#90CAF9'}`, borderRadius: 10, padding: '12px 14px' }
             },
               React.createElement('div', { style: { display: 'flex', gap: 8, marginBottom: 6, alignItems: 'flex-start' } },
-                React.createElement('span', { style: { fontSize: 16, flexShrink: 0 } }, alert.type === 'warning' ? '⚠️' : 'ℹ️'),
+                React.createElement('span', { style: { display: 'flex', flexShrink: 0 } }, alert.type === 'warning' ? (I && I.alert(17, '#E65100')) : (I && I.infoCircle(17, '#1565C0'))),
                 React.createElement('div', null,
                   React.createElement('div', { style: { fontWeight: 700, fontSize: 13, color: '#1A2433', marginBottom: 3 } }, alert.machine),
                   React.createElement('div', { style: { fontSize: 13, color: '#555', lineHeight: 1.5 } }, alert.message)

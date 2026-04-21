@@ -15,9 +15,11 @@ function TopBar() {
   },
     // Hamburger (mobile only)
     deviceMode === 'mobile' && React.createElement('button', {
+      type: 'button',
       onClick: () => setSidebarOpen(true),
-      style: { background: 'none', border: 'none', cursor: 'pointer', color: '#C5CCD4', fontSize: 18, padding: '4px 6px', borderRadius: 4 }
-    }, '☰'),
+      title: 'Open menu',
+      style: { background: 'none', border: 'none', cursor: 'pointer', color: '#C5CCD4', padding: '4px 6px', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+    }, I.menu(20, '#C5CCD4')),
 
     // Logo + team name
     React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 } },
@@ -25,7 +27,10 @@ function TopBar() {
         'K',
         React.createElement('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 7, height: 7, background: '#4CAF50', borderRadius: '50%', border: '2px solid #1B2733' } })
       ),
-      deviceMode !== 'mobile' && React.createElement('span', { style: { color: '#fff', fontWeight: 700, fontSize: 13 } }, 'KobiAI · Bratislava Plant ▾')
+      deviceMode !== 'mobile' && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 4, color: '#fff', fontWeight: 700, fontSize: 13 } },
+        React.createElement('span', null, 'KobiAI · Bratislava Plant'),
+        I.chevronDown(12, 'rgba(255,255,255,0.65)')
+      )
     ),
 
     // Search bar
@@ -46,22 +51,31 @@ function TopBar() {
       ),
 
       // Device preview (always visible so mobile preview can switch back to desktop/tablet)
-      React.createElement('div', { style: { display: 'flex', background: '#2F3E50', borderRadius: 6, overflow: 'hidden', flexShrink: 0 } },
-        [['desktop','🖥️'],['tablet','📱'],['mobile','📱']].map(([mode]) =>
-          React.createElement('button', {
+      React.createElement('div', { style: { display: 'flex', background: '#2F3E50', borderRadius: 6, overflow: 'hidden', flexShrink: 0, alignItems: 'center' } },
+        ['desktop', 'tablet', 'mobile'].map((mode) => {
+          const active = deviceMode === mode;
+          const col = active ? '#fff' : '#8B97A3';
+          const sz = deviceMode === 'mobile' ? 15 : 16;
+          const icon = mode === 'desktop' ? I.monitor(sz, col) : mode === 'tablet' ? I.tablet(sz, col) : I.smartphone(sz, col);
+          const title = mode === 'desktop' ? 'Desktop preview' : mode === 'tablet' ? 'Tablet preview' : 'Mobile preview';
+          return React.createElement('button', {
             key: mode, type: 'button', onClick: () => setDeviceMode(mode),
-            title: mode === 'desktop' ? 'Desktop preview' : mode === 'tablet' ? 'Tablet preview' : 'Mobile preview',
-            style: { padding: deviceMode === 'mobile' ? '4px 6px' : '4px 8px', background: deviceMode === mode ? '#1E3A5F' : 'none', border: 'none', cursor: 'pointer', fontSize: deviceMode === 'mobile' ? 12 : 13, color: deviceMode === mode ? '#fff' : '#8B97A3', transition: 'all 0.15s' }
-          }, mode === 'desktop' ? 'D' : mode === 'tablet' ? 'T' : 'M')
-        )
+            title,
+            style: { padding: deviceMode === 'mobile' ? '5px 7px' : '6px 8px', background: active ? '#1E3A5F' : 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }
+          }, icon);
+        })
       ),
 
       // Language
       React.createElement('div', { style: { position: 'relative' } },
         React.createElement('button', {
+          type: 'button',
           onClick: () => { setShowLangMenu(l => !l); setShowRoleMenu(false); },
-          style: { background: '#2F3E50', border: 'none', borderRadius: 6, padding: '4px 9px', cursor: 'pointer', color: '#C5CCD4', fontSize: 12, fontWeight: 700 }
-        }, language.toUpperCase() + ' ▾'),
+          style: { background: '#2F3E50', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', color: '#C5CCD4', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }
+        },
+          React.createElement('span', null, language.toUpperCase()),
+          I.chevronDown(11, '#9BA8B4')
+        ),
         showLangMenu && React.createElement('div', {
           style: { position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#1B2733', border: '1px solid #2F3E50', borderRadius: 8, overflow: 'hidden', zIndex: 100, minWidth: 80 }
         },
@@ -80,7 +94,7 @@ function TopBar() {
         },
           React.createElement('span', { style: { width: 18, height: 18, borderRadius: '50%', background: role === 'manager' ? '#1E3A5F' : '#2E7D32', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', fontWeight: 800 } }, role === 'manager' ? 'MH' : 'JN'),
           deviceMode !== 'mobile' && React.createElement('span', null, role === 'manager' ? 'Martin H.' : 'Jozef N.'),
-          '▾'
+          I.chevronDown(11, '#9BA8B4')
         ),
         showRoleMenu && React.createElement('div', {
           style: { position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#1B2733', border: '1px solid #2F3E50', borderRadius: 8, overflow: 'hidden', zIndex: 100, minWidth: 200 }
@@ -98,7 +112,7 @@ function TopBar() {
               React.createElement('div', { style: { fontWeight: 600 } }, opt.name),
               React.createElement('div', { style: { fontSize: 11, color: '#8B97A3' } }, opt.label)
             ),
-            role === opt.r && React.createElement('span', { style: { marginLeft: 'auto', color: '#4CAF50', fontSize: 14 } }, '✓')
+            role === opt.r && React.createElement('span', { style: { marginLeft: 'auto', display: 'flex' } }, I.check(16, '#4CAF50'))
           ))
         )
       )

@@ -72,17 +72,18 @@ function FileCard({ file }) {
 
 /* ─── Sources card ─── */
 function SourcesCard({ sources, visible }) {
+  const I = window.Icons;
   const [expanded, setExpanded] = useState(false);
   if (!visible || !sources?.length) return null;
   return React.createElement('div', { style:{marginTop:10,background:'#F3EAF5',border:'1px solid #C9A8D0',borderRadius:10,overflow:'hidden',fontSize:13} },
-    React.createElement('button', { onClick:()=>setExpanded(e=>!e), style:{width:'100%',padding:'8px 12px',background:'none',border:'none',textAlign:'left',cursor:'pointer',display:'flex',alignItems:'center',gap:8,color:'#4d0a52',fontWeight:600} },
-      React.createElement('span',null,'📄'),
+    React.createElement('button', { type:'button', onClick:()=>setExpanded(e=>!e), style:{width:'100%',padding:'8px 12px',background:'none',border:'none',textAlign:'left',cursor:'pointer',display:'flex',alignItems:'center',gap:8,color:'#4d0a52',fontWeight:600} },
+      I && I.fileText(16, '#4d0a52'),
       React.createElement('span',null,`Sources (${sources.length})`),
-      React.createElement('span',{style:{marginLeft:'auto',color:'#9BA8B4'}},expanded?'▲':'▼')
+      React.createElement('span',{style:{marginLeft:'auto',color:'#9BA8B4',display:'flex'}}, I && (expanded ? I.chevronUp(14, '#9BA8B4') : I.chevronDown(14, '#9BA8B4')))
     ),
     expanded && React.createElement('div',{style:{padding:'4px 12px 10px',borderTop:'1px solid #C9A8D0'}},
       sources.map((s,i)=>React.createElement('div',{key:i,style:{display:'flex',alignItems:'flex-start',gap:8,padding:'4px 0',borderBottom:i<sources.length-1?'1px solid #E2D4E5':'none'}},
-        React.createElement('span',{style:{fontSize:14,marginTop:1}},s.isNote?'🧠':'📄'),
+        React.createElement('span',{style:{display:'flex',marginTop:1,flexShrink:0}}, s.isNote ? (I && I.brain(15, '#4d0a52')) : (I && I.fileText(15, '#4d0a52'))),
         React.createElement('div',null,
           React.createElement('div',{style:{color:'#4d0a52',fontWeight:600,fontSize:12}},s.title),
           (s.ref||s.date)&&React.createElement('div',{style:{color:'#8B97A3',fontSize:11}},[s.ref,s.date].filter(Boolean).join(' · '))
@@ -127,6 +128,7 @@ function BotMessage({ msg, sourcesVisible }) {
 
 /* ─── Ingestion card ─── */
 function IngestionCard({ file }) {
+  const I = window.Icons;
   const [phase, setPhase] = useState(file.status==='indexed'?'done':'parsing');
   const [progress, setProgress] = useState(file.status==='indexed'?100:0);
   useEffect(()=>{
@@ -139,12 +141,12 @@ function IngestionCard({ file }) {
   },[]);
   return React.createElement('div',{style:{background:'#F0F8FF',border:'1px solid #C5D9EE',borderRadius:10,padding:'12px 16px',maxWidth:380}},
     React.createElement('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:8}},
-      React.createElement('span',{style:{fontSize:22}},'📄'),
-      React.createElement('div',null,
-        React.createElement('div',{style:{fontWeight:600,fontSize:13,color:'#1A2433'}}),file.name,
+      React.createElement('span',{style:{display:'flex',flexShrink:0}}, I && I.fileText(22, '#1565C0')),
+      React.createElement('div',{style:{minWidth:0,flex:1}},
+        React.createElement('div',{style:{fontWeight:600,fontSize:13,color:'#1A2433'}}, file.name),
         React.createElement('div',{style:{fontSize:11,color:'#6B8EAE'}},file.size+' MB')
       ),
-      phase==='done'&&React.createElement('span',{style:{marginLeft:'auto',color:'#4CAF50',fontWeight:700,fontSize:12}},'✅ Indexed')
+      phase==='done'&&React.createElement('span',{style:{marginLeft:'auto',display:'flex',alignItems:'center',gap:5,color:'#4CAF50',fontWeight:700,fontSize:12}}, I && I.checkCircle(15, '#4CAF50'), 'Indexed')
     ),
     phase!=='done'&&React.createElement('div',null,
       React.createElement('div',{style:{height:5,background:'#C5D9EE',borderRadius:3,overflow:'hidden'}},
@@ -162,14 +164,16 @@ function IngestionCard({ file }) {
 
 /* ─── Incident card ─── */
 function IncidentCard({ incident: inc }) {
+  const I = window.Icons;
   const sevColor = { critical:'#B71C1C', warning:'#E65100', info:'#1565C0' }[inc.severity]||'#555';
   const stBg = { resolved:'#E8F5E9','in-progress':'#FFF3E0',open:'#FFEBEE','awaiting-approval':'#FFF3E0' }[inc.status]||'#F5F5F5';
   const stCol = { resolved:'#2E7D32','in-progress':'#E65100',open:'#B71C1C','awaiting-approval':'#E65100' }[inc.status]||'#555';
-  const stLbl = { resolved:'🟢 Resolved','in-progress':'🟡 In Progress',open:'🔴 Open','awaiting-approval':'🟠 Awaiting' }[inc.status]||inc.status;
+  const stDot = { resolved:'#4CAF50','in-progress':'#FF9800',open:'#F44336','awaiting-approval':'#FF9800' }[inc.status]||'#9E9E9E';
+  const stLbl = { resolved:'Resolved','in-progress':'In progress',open:'Open','awaiting-approval':'Awaiting' }[inc.status]||String(inc.status);
   return React.createElement('div',{style:{border:`1px solid ${sevColor}44`,borderLeft:`4px solid ${sevColor}`,borderRadius:10,padding:'12px 16px',background:'#fff',marginBottom:6}},
     React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:5}},
-      React.createElement('span',{style:{fontWeight:700,color:'#1A2433',fontSize:13}},`🚨 ${inc.id}`),
-      React.createElement('span',{style:{background:stBg,color:stCol,borderRadius:20,padding:'2px 10px',fontSize:11,fontWeight:700}},stLbl),
+      React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6,fontWeight:700,color:'#1A2433',fontSize:13}}, I && I.alert(15, '#B71C1C'), inc.id),
+      React.createElement('span',{style:{background:stBg,color:stCol,borderRadius:20,padding:'2px 10px',fontSize:11,fontWeight:700,display:'inline-flex',alignItems:'center',gap:5}}, I && I.statusDot(10, stDot), stLbl),
       React.createElement('span',{style:{marginLeft:'auto',color:'#6B8EAE',fontSize:11}},inc.opened)
     ),
     React.createElement('div',{style:{fontSize:14,color:'#1A2433',fontWeight:500,marginBottom:4}},
@@ -196,6 +200,7 @@ function DayDivider({ label }) {
 
 /* ─── Message row ─── */
 function Message({ msg, isGrouped }) {
+  const I = window.Icons;
   const { users } = window.KobiData;
   const user = users[msg.userId]||{initials:'?',color:'#999',name:msg.userId};
   const [hov, setHov] = useState(false);
@@ -219,10 +224,10 @@ function Message({ msg, isGrouped }) {
         msg.urgent&&React.createElement('span',{style:{background:'#E53935',color:'#fff',fontSize:10,fontWeight:700,borderRadius:4,padding:'2px 8px',letterSpacing:'0.06em'}},'URGENT'),
         React.createElement('span',{style:{color:'#9BA8B4',fontSize:11}},msg.time)
       ),
-      msg.isBot
-        ? React.createElement(BotMessage,{msg,sourcesVisible:true})
-        : msg.isIngestion
-          ? React.createElement(IngestionCard,{file:msg.file})
+      msg.isIngestion && msg.file
+        ? React.createElement(IngestionCard,{ file: msg.file })
+        : msg.isBot
+          ? React.createElement(BotMessage,{ msg, sourcesVisible: true })
           : React.createElement('div',{style:{fontSize:14,color:'#2A3544',lineHeight:1.65}},
               msg.text&&React.createElement(MarkdownText,{text:msg.text})
             ),
@@ -237,12 +242,18 @@ function Message({ msg, isGrouped }) {
         React.createElement('div',{style:{display:'flex',alignItems:'center'}},
           msg.threadAvatars?.slice(0,3).map((a,i)=>React.createElement('div',{key:i,style:{width:20,height:20,borderRadius:'50%',background:a.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',fontWeight:700,border:'2px solid #fff',marginLeft:i>0?-6:0}},a.initials))
         ),
-        React.createElement('button',{style:{background:'none',border:'none',cursor:'pointer',color:'#4d0a52',fontSize:12,fontWeight:600,padding:0}},`↩ ${msg.threadCount} ${msg.threadCount===1?'reply':'replies'}`),
+        React.createElement('button',{type:'button',style:{background:'none',border:'none',cursor:'pointer',color:'#4d0a52',fontSize:12,fontWeight:600,padding:0,display:'inline-flex',alignItems:'center',gap:5}}, I.reply(14, '#4d0a52'), `${msg.threadCount} ${msg.threadCount===1?'reply':'replies'}`),
         React.createElement('button',{style:{background:'none',border:'none',cursor:'pointer',color:'#8B97A3',fontSize:12,padding:0}},`Follow`)
       )
     ),
-    hov&&React.createElement('div',{style:{position:'absolute',top:-6,right:16,background:'#fff',border:'1px solid #E8ECF0',borderRadius:9,display:'flex',gap:2,padding:'3px 6px',boxShadow:'0 2px 12px rgba(0,0,0,0.12)',zIndex:10}},
-      ['😊','👍','↩️','🔖','⋯'].map(icon=>React.createElement('button',{key:icon,style:{background:'none',border:'none',cursor:'pointer',fontSize:14,padding:'3px 5px',borderRadius:6,color:'#555'},title:icon},icon))
+    hov&&I&&React.createElement('div',{style:{position:'absolute',top:-6,right:16,background:'#fff',border:'1px solid #E8ECF0',borderRadius:9,display:'flex',gap:2,padding:'3px 6px',boxShadow:'0 2px 12px rgba(0,0,0,0.12)',zIndex:10}},
+      [
+        ['react-smile', () => I.smile(16, '#555'), 'React'],
+        ['react-up', () => I.thumbsUp(16, '#555'), 'Thumbs up'],
+        ['react-reply', () => I.reply(16, '#555'), 'Reply'],
+        ['react-pin', () => I.bookmark(16, '#555'), 'Save'],
+        ['react-more', () => I.dotsHorizontal(16, '#555'), 'More'],
+      ].map(([key, render, title]) => React.createElement('button',{key,type:'button',style:{background:'none',border:'none',cursor:'pointer',padding:'4px 6px',borderRadius:6,color:'#555',display:'flex',alignItems:'center'},title}, render()))
     )
   );
 }
@@ -298,6 +309,7 @@ function VoiceWave({ active }) {
 
 /* ─── Docs drop zone ─── */
 function DocsDropZone({ onDrop }) {
+  const I = window.Icons;
   const [dragging, setDragging] = useState(false);
   return React.createElement('div',{
     onDragOver:e=>{e.preventDefault();setDragging(true);},
@@ -305,10 +317,10 @@ function DocsDropZone({ onDrop }) {
     onDrop:e=>{e.preventDefault();setDragging(false);const f=e.dataTransfer.files[0];if(f)onDrop(f);},
     style:{margin:'14px 18px',padding:'28px 24px',border:`2px dashed ${dragging?'#4d0a52':'#C5D0DB'}`,borderRadius:14,background:dragging?'#F3EAF5':'#F7F9FB',textAlign:'center',transition:'all 0.2s',cursor:'pointer'}
   },
-    React.createElement('div',{style:{fontSize:32,marginBottom:10}},'📥'),
+    React.createElement('div',{style:{display:'flex',justifyContent:'center',marginBottom:10}}, I && I.upload(36, '#4d0a52')),
     React.createElement('div',{style:{fontWeight:700,color:'#1A2433',fontSize:15,marginBottom:4}},'Drop documents here to feed the AI'),
     React.createElement('div',{style:{fontSize:13,color:'#8B97A3',marginBottom:6}},'PDFs · Schematics · Manuals · Images'),
-    React.createElement('div',{style:{fontSize:12,color:'#4CAF50',fontWeight:600}},'🔒 Files stay on-prem. Nothing leaves this factory.')
+    React.createElement('div',{style:{fontSize:12,color:'#4CAF50',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}, I && I.lock(14, '#4CAF50'), 'Files stay on-prem. Nothing leaves this factory.')
   );
 }
 
@@ -332,7 +344,7 @@ function Composer({ channelName, onSend, onVoice, voiceActive, input, setInput, 
       ),
       // Input row
       React.createElement('div',{style:{display:'flex',alignItems:'flex-end',padding:'8px 10px',gap:8}},
-        React.createElement('button',{style:{background:'none',border:'none',cursor:'pointer',color:'#8B97A3',fontSize:22,padding:'0 4px',lineHeight:1,flexShrink:0,marginBottom:1}},'+'),
+        React.createElement('button',{type:'button',style:{background:'none',border:'none',cursor:'pointer',color:'#8B97A3',padding:'0 4px',lineHeight:1,flexShrink:0,marginBottom:1,display:'flex'}}, I && I.plus(20, '#8B97A3')),
         React.createElement(VoiceWave,{active:voiceActive}),
         React.createElement('textarea',{
           ref:inputRef, value:input, onChange:e=>setInput(e.target.value),
@@ -356,6 +368,7 @@ function Composer({ channelName, onSend, onVoice, voiceActive, input, setInput, 
 
 /* ─── Main ChatView ─── */
 function ChatView() {
+  const I = window.Icons;
   const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, setRightPanel, t, role } = useKobi();
   const { channels, users, machines, botResponses, voicePrefills } = window.KobiData;
   const [input, setInput] = useState('');
@@ -485,7 +498,7 @@ function ChatView() {
     // Header
     React.createElement('div',{style:{height:52,borderBottom:'1px solid #E8ECF0',display:'flex',alignItems:'center',padding:'0 18px',gap:10,flexShrink:0,background:'#fff'}},
       channel&&React.createElement(React.Fragment,null,
-        React.createElement('span',{style:{fontSize:18}},(channel.machineId?{siemens:'⚙️',kuka:'🤖',zund:'✂️'}[channel.machineId]:channel.icon)||channel.icon),
+        React.createElement('span',{style:{display:'flex',flexShrink:0}}, I && I.channelHeaderIcon(channel, 20, '#1A2433')),
         React.createElement('div',null,
           React.createElement('div',{style:{fontWeight:700,fontSize:15,color:'#1A2433'}},channel.name),
           React.createElement('div',{style:{fontSize:11,color:'#9BA8B4'}},`${channel.members} ${t('members')}${channel.purpose?' · '+channel.purpose.slice(0,50):''}`)

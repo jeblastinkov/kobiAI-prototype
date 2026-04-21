@@ -39,6 +39,7 @@ function Field({ label, required, hint, children }) {
 }
 
 function VoiceTextArea({ value, onChange, placeholder, rows=4, voiceText }) {
+  const I = window.Icons;
   const [recording, setRecording] = useState(false);
   const handleVoice = () => {
     if (recording) return;
@@ -51,9 +52,9 @@ function VoiceTextArea({ value, onChange, placeholder, rows=4, voiceText }) {
   return React.createElement('div', { style:{position:'relative'} },
     React.createElement('textarea', { value, onChange:e=>onChange(e.target.value), placeholder, rows,
       style:{width:'100%',padding:'10px 40px 10px 12px',border:'1px solid #C5D0DB',borderRadius:10,fontSize:14,color:'#1A2433',resize:'vertical',fontFamily:'inherit',lineHeight:1.6,boxSizing:'border-box',outline:'none',background:'#FAFBFC'} }),
-    React.createElement('button', { onClick:handleVoice,
-      style:{position:'absolute',right:10,top:10,background:recording?'#FEE2E2':'#F3F4F6',border:'none',cursor:'pointer',fontSize:15,padding:'5px 6px',borderRadius:7,color:recording?'#F44336':'#6B7280',transition:'all 0.2s'} },
-      recording ? '🔴' : '🎤')
+    React.createElement('button', { type:'button', onClick:handleVoice,
+      style:{position:'absolute',right:10,top:10,background:recording?'#FEE2E2':'#F3F4F6',border:'none',cursor:'pointer',padding:'5px 6px',borderRadius:7,color:recording?'#F44336':'#6B7280',transition:'all 0.2s',display:'flex',alignItems:'center'} },
+      recording ? (I && I.record(18, '#F44336')) : (I && I.mic(18, '#6B7280')))
   );
 }
 
@@ -69,13 +70,14 @@ function SegCtrl({ options, value, onChange }) {
 
 function AddNoteDialog({ machine, onSave, onClose }) {
   const { t } = useKobi();
+  const I = window.Icons;
   const [category, setCategory] = useState('Repair');
   const [text, setText] = useState('');
   const [severity, setSeverity] = useState('info');
   const [photo, setPhoto] = useState(false);
   const voiceText = 'Replaced timing belt 3M-225-6. Re-tensioned to 4.5 N — factory spec says 4 but it slips under high feed. Confirmed with test cut O0001.';
 
-  return React.createElement(Modal, { title:'🧠 Add Maintenance Note', subtitle:'Captured knowledge is immediately searchable by the AI', onClose,
+  return React.createElement(Modal, { title: React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } }, I && I.brain(20, '#4d0a52'), 'Add Maintenance Note'), subtitle:'Captured knowledge is immediately searchable by the AI', onClose,
     footer: React.createElement(React.Fragment, null,
       React.createElement('button', { onClick:onClose, style:{padding:'9px 18px',border:'1px solid #C5D0DB',borderRadius:9,background:'#fff',cursor:'pointer',fontSize:13,color:'#555'} }, t('cancel')),
       React.createElement('button', { onClick:()=>{ if(text.trim()) onSave({text:text.trim(),category,severity}); }, disabled:!text.trim(),
@@ -93,7 +95,7 @@ function AddNoteDialog({ machine, onSave, onClose }) {
         style:{width:'100%',padding:'10px 12px',border:'1px solid #C5D0DB',borderRadius:10,fontSize:14,color:'#1A2433',background:'#FAFBFC',outline:'none'} },
         ['Repair','Observation','Tip','Incident note'].map(c=>React.createElement('option',{key:c},c)))
     ),
-    React.createElement(Field, { label:'What happened', required:true, hint:'or use 🎤 voice' },
+    React.createElement(Field, { label:'What happened', required:true, hint:'or use voice input' },
       React.createElement(VoiceTextArea, { value:text, onChange:setText, placeholder:'Describe what you saw or what you fixed…', rows:4, voiceText })
     ),
     React.createElement(Field, { label:'Severity' },
@@ -102,7 +104,7 @@ function AddNoteDialog({ machine, onSave, onClose }) {
     ),
     React.createElement(Field, { label:'Photo (optional)' },
       !photo
-        ? React.createElement('button', { onClick:()=>setPhoto(true), style:{padding:'8px 16px',border:'1.5px dashed #C5D0DB',borderRadius:9,background:'#FAFBFC',cursor:'pointer',fontSize:13,color:'#6B8EAE'} }, '📷 Attach photo')
+        ? React.createElement('button', { type:'button', onClick:()=>setPhoto(true), style:{padding:'8px 16px',border:'1.5px dashed #C5D0DB',borderRadius:9,background:'#FAFBFC',cursor:'pointer',fontSize:13,color:'#6B8EAE',display:'inline-flex',alignItems:'center',gap:8} }, I && I.camera(16, '#6B8EAE'), 'Attach photo')
         : React.createElement('div', { style:{display:'flex',alignItems:'center',gap:10,padding:'8px 12px',background:'#F3EAF5',border:'1px solid #C9A8D0',borderRadius:9} },
             React.createElement('div', { style:{width:44,height:32,background:'repeating-linear-gradient(45deg,#C9A8D0,#C9A8D0 2px,#EDE0EF 2px,#EDE0EF 6px)',borderRadius:5} }),
             React.createElement('span', { style:{fontSize:13,color:'#4d0a52'} }, 'IMG_20260420_104532.jpg'),
@@ -116,6 +118,7 @@ function AddNoteDialog({ machine, onSave, onClose }) {
 
 function IncidentDialog({ machine, onSubmit, onClose }) {
   const { t, role } = useKobi();
+  const I = window.Icons;
   const [tab, setTab] = useState('details');
   const [form, setForm] = useState({
     location:'', description:'', severity:'warning',
@@ -141,7 +144,7 @@ function IncidentDialog({ machine, onSubmit, onClose }) {
     {initials:'JN',color:'#2E7D32'},{initials:'MH',color:'#1565C0'},{initials:'PK',color:'#6A1B9A'}
   ];
 
-  return React.createElement(Modal, { title:'🚨 Log Incident', subtitle:'Structured maintenance record · auto-posts to #incidents', width:700, onClose,
+  return React.createElement(Modal, { title: React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } }, I && I.alert(20, '#E53935'), 'Log Incident'), subtitle:'Structured maintenance record · auto-posts to #incidents', width:700, onClose,
     footer: React.createElement(React.Fragment, null,
       React.createElement('div', { style:{fontSize:12,color:'#9BA8B4',marginRight:'auto'} }, `${doneTasks}/${tasks.length} tasks checked`),
       React.createElement('button', { onClick:onClose, style:{padding:'9px 18px',border:'1px solid #C5D0DB',borderRadius:9,background:'#fff',cursor:'pointer',fontSize:13,color:'#555'} }, 'Save draft'),
@@ -175,7 +178,7 @@ function IncidentDialog({ machine, onSubmit, onClose }) {
 
     /* Tabs */
     React.createElement('div', { style:{display:'flex',gap:0,marginBottom:20,borderBottom:'1px solid #EBEEF2'} },
-      [['details','📋 Incident Details'],['tasks','✅ Resolution Tasks'],['parts','🔧 Parts & Notes']].map(([id,lbl]) =>
+      [['details','Incident Details'],['tasks','Resolution Tasks'],['parts','Parts & Notes']].map(([id,lbl]) =>
         React.createElement('button', { key:id, onClick:()=>setTab(id),
           style:{padding:'9px 20px',background:'none',border:'none',borderBottom:tab===id?'2px solid #4d0a52':'2px solid transparent',color:tab===id?'#4d0a52':'#8B97A3',fontWeight:tab===id?700:400,cursor:'pointer',fontSize:13,transition:'all 0.15s'} },
           lbl)
@@ -193,7 +196,7 @@ function IncidentDialog({ machine, onSubmit, onClose }) {
       ),
       React.createElement(Field, { label:'Severity' },
         React.createElement(SegCtrl, { value:form.severity, onChange:v=>setField('severity',v),
-          options:[{value:'info',label:'ℹ️ Info',color:'#1E88E5'},{value:'warning',label:'⚠️ Warning',color:'#FB8C00'},{value:'critical',label:'🚨 Critical',color:'#E53935'}] })
+          options:[{value:'info',label:'Info',color:'#1E88E5'},{value:'warning',label:'Warning',color:'#FB8C00'},{value:'critical',label:'Critical',color:'#E53935'}] })
       ),
       React.createElement(Field, { label:'Component identified' },
         React.createElement(React.Fragment, null,
@@ -224,8 +227,9 @@ function IncidentDialog({ machine, onSubmit, onClose }) {
           React.createElement('span', { style:{fontSize:14,color:task.done?'#4d0a52':'#1A2433',fontWeight:task.done?500:400,textDecoration:task.done?'line-through':'none',opacity:task.done?0.75:1} }, task.label)
         )
       ),
-      React.createElement('div', { style:{marginTop:18,padding:'12px 14px',background:'#FFF8E1',border:'1px solid #FFE082',borderRadius:10,fontSize:13,color:'#795548'} },
-        '💡 Complete all tasks before submitting for approval to ensure compliance tracking.'
+      React.createElement('div', { style:{marginTop:18,padding:'12px 14px',background:'#FFF8E1',border:'1px solid #FFE082',borderRadius:10,fontSize:13,color:'#795548',display:'flex',gap:10,alignItems:'flex-start'} },
+        I && I.help(18, '#795548'),
+        React.createElement('span', null, 'Complete all tasks before submitting for approval to ensure compliance tracking.')
       )
     ),
 
@@ -233,7 +237,7 @@ function IncidentDialog({ machine, onSubmit, onClose }) {
     tab==='parts' && React.createElement(React.Fragment, null,
       React.createElement(Field, { label:'Resolution type' },
         React.createElement(SegCtrl, { value:form.resolutionType, onChange:v=>setField('resolutionType',v),
-          options:[{value:'Permanent',label:'✅ Permanent',color:'#2E7D32'},{value:'Temporary',label:'⚠️ Temporary',color:'#FB8C00'}] })
+          options:[{value:'Permanent',label:'Permanent',color:'#2E7D32'},{value:'Temporary',label:'Temporary',color:'#FB8C00'}] })
       ),
       React.createElement(Field, { label:'Resolution notes' },
         React.createElement(VoiceTextArea, { value:form.resolutionNotes, onChange:v=>setField('resolutionNotes',v), placeholder:'What was done to resolve the issue?', rows:3, voiceText:voiceRes })
@@ -261,12 +265,13 @@ function IncidentDialog({ machine, onSubmit, onClose }) {
 
 function OnPremModal() {
   const { showOnPremModal, setShowOnPremModal, t } = useKobi();
+  const I = window.Icons;
   if (!showOnPremModal) return null;
   return React.createElement(Modal, { title:'', width:560, onClose:()=>setShowOnPremModal(false),
     footer: React.createElement('button', { onClick:()=>setShowOnPremModal(false), style:{padding:'9px 28px',background:'#4d0a52',border:'none',borderRadius:9,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:13} }, t('close'))
   },
     React.createElement('div', { style:{textAlign:'center',padding:'0 12px 10px'} },
-      React.createElement('div', { style:{fontSize:56,marginBottom:14} }, '🏭'),
+      React.createElement('div', { style:{display:'flex',justifyContent:'center',marginBottom:14} }, I && I.general(56, '#4d0a52')),
       React.createElement('div', { style:{fontWeight:800,fontSize:22,color:'#1A2433',marginBottom:14} }, t('onPremTitle')||'Your data never leaves this factory.'),
       React.createElement('div', { style:{fontSize:15,color:'#555',lineHeight:1.75,marginBottom:20} },
         'KobiAI runs entirely on your infrastructure. No cloud, no outbound traffic, no data shared with any third party.',
@@ -313,7 +318,7 @@ function SearchOverlay() {
           onMouseEnter:e=>e.currentTarget.style.background='#F7F9FB',
           onMouseLeave:e=>e.currentTarget.style.background='#fff',
         },
-          React.createElement('span',{style:{fontSize:17,flexShrink:0}}, r.type==='doc'?'📄':'💬'),
+          React.createElement('span',{style:{display:'flex',flexShrink:0}}, window.Icons && (r.type==='doc' ? window.Icons.fileText(17, '#1565C0') : window.Icons.chat(17, '#4d0a52'))),
           React.createElement('div',null,
             React.createElement('div',{style:{fontSize:13,color:'#1A2433',marginBottom:3}},r.text),
             React.createElement('div',{style:{fontSize:11,color:'#9BA8B4'}},r.type==='doc'?r.ref:`${r.channel} · ${r.user} · ${r.time}`)
@@ -329,10 +334,11 @@ function SearchOverlay() {
 
 function ToastContainer() {
   const { toasts } = useKobi();
+  const I = window.Icons;
   return React.createElement('div', { style:{position:'fixed',bottom:24,right:24,zIndex:400,display:'flex',flexDirection:'column',gap:8} },
     toasts.map(toast=>React.createElement('div', { key:toast.id,
       style:{background:toast.type==='success'?'#1B3A1B':toast.type==='info'?'#1A2E45':'#3A1B1B',color:'#fff',padding:'13px 20px',borderRadius:12,fontSize:13,fontWeight:500,boxShadow:'0 4px 24px rgba(0,0,0,0.28)',display:'flex',alignItems:'center',gap:10,animation:'slideInRight 0.25s ease-out',maxWidth:340} },
-      React.createElement('span',{style:{fontSize:18}}, toast.type==='success'?'✅':toast.type==='info'?'ℹ️':'⚠️'),
+      React.createElement('span',{style:{display:'flex',flexShrink:0}}, toast.type==='success' ? (I && I.checkCircle(18, '#fff')) : toast.type==='info' ? (I && I.infoCircle(18, '#fff')) : (I && I.alert(18, '#fff'))),
       toast.msg
     ))
   );

@@ -1775,10 +1775,10 @@ function Message({ msg, isGrouped }) {
         user.isBot && React.createElement('span', { style: { background: '#1E3A5F', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 3, padding: '1px 5px', letterSpacing: '0.04em' } }, 'APP'),
         React.createElement('span', { style: { color: '#9BA8B4', fontSize: 11 } }, msg.time)
       ),
-      msg.isBot
-        ? React.createElement(BotMessage, { msg, sourcesVisible })
-        : msg.isIngestion
-          ? React.createElement(IngestionCard, { file: msg.file })
+      msg.isIngestion && msg.file
+        ? React.createElement(IngestionCard, { file: msg.file })
+        : msg.isBot
+          ? React.createElement(BotMessage, { msg, sourcesVisible })
           : React.createElement('div', { style: { fontSize: 14, color: '#2A3544', lineHeight: 1.6 } },
               msg.text && React.createElement(MarkdownText, { text: msg.text })
             ),

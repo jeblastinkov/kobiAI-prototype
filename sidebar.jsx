@@ -23,7 +23,7 @@ function Sidebar() {
   const machineList = [
     { slug: 'machine-siemens', name: 'Siemens S7-1500', short: 'CNC Line 3',    icon: I.gear,   id: 'siemens', status: 'online' },
     { slug: 'machine-kuka',    name: 'KUKA KR 60-3',    short: 'Welding Robot', icon: I.robot,  id: 'kuka',    status: 'maintenance' },
-    { slug: 'machine-zund',    name: 'Zünd G3',          short: 'Cutting Line',  icon: I.wrench, id: 'zund',    status: 'online' },
+    { slug: 'machine-zund',    name: 'Zünd G3',          short: 'Cutting Line',  icon: I.cutter, id: 'zund',    status: 'online' },
   ];
 
   const ACTIVE_BG   = 'rgba(255,255,255,0.18)';
