@@ -1,0 +1,2309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KobiAI — Maintenance Intelligence Platform</title>
+<script>
+(function(){
+  window.addEventListener('unhandledrejection', function(e){ e.preventDefault(); }, true);
+  var _ce = console.error;
+  console.error = function() {
+    var m = Array.prototype.join.call(arguments,' ');
+    if (m.indexOf('Not implemented') !== -1 || m.indexOf('ResizeObserver') !== -1) return;
+    _ce.apply(console, arguments);
+  };
+})();
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{width:100%;height:100%;overflow:hidden;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0D1117;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#C5D0DB;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#9BA8B4}
+@keyframes bounce{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-5px);opacity:1}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+@keyframes wave{from{transform:scaleY(.4)}to{transform:scaleY(1.2)}}
+@keyframes slideUp{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes slideInRight{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid #4CAF50;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+select,input,textarea{font-family:inherit}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>// KobiAI Mock Data — all data is fictional for demo purposes
+
+window.KobiData = (() => {
+
+const users = {
+  martin: { id: 'martin', name: 'Martin Horváth', initials: 'MH', color: '#1E3A5F', role: 'manager', online: true },
+  jozef:  { id: 'jozef',  name: 'Jozef Novák',   initials: 'JN', color: '#2E7D32', role: 'technician', online: true },
+  pavol:  { id: 'pavol',  name: 'Pavol Kováč',   initials: 'PK', color: '#6A1B9A', online: false },
+  tomas:  { id: 'tomas',  name: 'Tomáš Gazda',   initials: 'TG', color: '#BF360C', online: false },
+  kobi:   { id: 'kobi',   name: 'Kobi',           initials: 'K',  color: '#1E3A5F', isBot: true, online: true },
+};
+
+const channels = [
+  { slug: 'general',              name: 'general',                icon: '🏭', purpose: 'General announcements and team updates', members: 9, pinned: 1 },
+  { slug: 'machine-siemens',      name: 'machine-siemens-s7-1500', icon: '⚙️', purpose: 'Siemens S7-1500 CNC · Hall A, Line 3', members: 5, pinned: 3, machineId: 'siemens' },
+  { slug: 'machine-kuka',         name: 'machine-kuka-kr-60',      icon: '🤖', purpose: 'KUKA KR 60-3 Welding Robot · Hall B, Line 1', members: 4, pinned: 2, machineId: 'kuka' },
+  { slug: 'machine-zund',         name: 'machine-zund-g3',         icon: '✂️', purpose: 'Zünd G3 Cutting Line · Hall C', members: 4, pinned: 2, machineId: 'zund' },
+  { slug: 'incidents',            name: 'incidents',               icon: '🚨', purpose: 'Incident tracking and maintenance log', members: 9, pinned: 0, mentions: 1 },
+  { slug: 'docs-drop',            name: 'docs-drop',               icon: '📥', purpose: 'Drop documents to feed the AI knowledge base', members: 9, pinned: 0 },
+  { slug: 'dashboard',            name: 'dashboard',               icon: '📊', purpose: 'Manager Dashboard · rolling 30d', members: 3, pinned: 0, managerOnly: true },
+];
+
+const machines = {
+  siemens: {
+    id: 'siemens', name: 'Siemens S7-1500 CNC', type: 'CNC Machining Centre',
+    oem: 'Siemens AG', location: 'Hall A, Line 3', commissioned: '2019',
+    status: 'online', docsIndexed: 847, chunksIndexed: 12340, diagramsExtracted: 412,
+    lastIncident: '2 days ago', color: '#1565C0',
+  },
+  kuka: {
+    id: 'kuka', name: 'KUKA KR 60-3', type: 'Welding Robot',
+    oem: 'KUKA Robotics', location: 'Hall B, Line 1', commissioned: '2020',
+    status: 'maintenance', docsIndexed: 623, chunksIndexed: 8910, diagramsExtracted: 287,
+    lastIncident: 'Yesterday', color: '#FF6F00',
+  },
+  zund: {
+    id: 'zund', name: 'Zünd G3 Cutting Line', type: 'Digital Cutting System',
+    oem: 'Zünd Systemtechnik AG', location: 'Hall C', commissioned: '2021',
+    status: 'online', docsIndexed: 412, chunksIndexed: 6820, diagramsExtracted: 198,
+    lastIncident: '3 days ago', color: '#2E7D32',
+  },
+};
+
+const now = Date.now();
+const minsAgo = (m) => new Date(now - m * 60000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+const hrsAgo  = (h) => new Date(now - h * 3600000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+const conversations = {
+  general: [
+    { id: 'g1', userId: 'kobi', time: 'Yesterday 08:00', pinned: true, text: `Welcome to **KobiAI · Bratislava Plant**. I am your AI maintenance assistant. Ask me anything about your machines, log incidents with \`/incident\`, drop documents in \`#docs-drop\`, and open a machine channel to get context-aware help. Everything stays inside this factory.` },
+    { id: 'g2', userId: 'tomas', time: 'Yesterday 13:22', text: 'Heads up — KR 60 had a welding arc misalignment yesterday, resolved. Thread in #incidents.' },
+    { id: 'g3', userId: 'martin', time: 'Yesterday 16:05', text: 'New Zünd docs uploaded this morning. KobiAI finished indexing in 18 seconds. 👀', threadCount: 1, threadPreview: { userId: 'kobi', text: '📄 Received "Zünd_G3_Manual_EN.pdf" (412 pages). Parsed. 1,034 chunks indexed. 23 diagrams extracted. Available in #machine-zund-g3.' } },
+    { id: 'g4', userId: 'pavol', time: minsAgo(47), text: 'Reminder — shift handover at 14:00.' },
+  ],
+
+  'machine-siemens': [
+    {
+      id: 's1', userId: 'jozef', time: hrsAgo(4) + ' · Today',
+      text: '@kobi The drive is throwing an F-304 error — what does it mean and how do I fix it?',
+    },
+    {
+      id: 's2', userId: 'kobi', time: hrsAgo(4),
+      isBot: true,
+      markdown: `**Error F-304 — Overcurrent in Motor Module**
+
+The motor module detected current exceeding the configured threshold. Common causes:
+
+1. **Short circuit** in the motor cable or winding
+2. **Incorrect motor parameters** (p0304, p0305)
+3. **Mechanical overload** — spindle blocked or under excessive load
+
+**Immediate steps:**
+1. Press RESET on the CU320-2 control unit
+2. Check cable at terminals U, V, W
+3. Measure winding resistance (expected 2.1–2.5 Ω / phase)
+4. Verify p0304 = 12.5 A (nameplate)
+
+⚠️ If resistance < 1.0 Ω, motor winding is damaged — do not restart.`,
+      sources: [
+        { title: 'Siemens SINAMICS S120 Fault Manual', ref: 'p.247 (F-304)', date: 'indexed 12 Mar' },
+        { title: 'Machine Config Sheet — CNC Line 3', ref: 'updated 8 Jan', date: '' },
+      ],
+      diagram: { label: '📊 Wiring Diagram — Fig. 8.14 (Motor Module Connection)' },
+    },
+    {
+      id: 's3', userId: 'jozef', time: hrsAgo(3.7),
+      text: '@kobi Which component is referenced in parameter p0304?',
+    },
+    {
+      id: 's4', userId: 'kobi', time: hrsAgo(3.7),
+      isBot: true,
+      markdown: `**Parameter p0304 — Rated Motor Current**
+
+Defines rated current of the connected motor in amperes. For your unit (Siemens 1FK7083-5AF71):
+
+- Nameplate: **12.5 A**
+- Configured: **12.5 A** ✅
+- Location: Drive object DO3, Motor Module slot 4
+
+If this doesn't match the motor nameplate, F-304 may trip under normal load.`,
+      sources: [
+        { title: 'SINAMICS S120 Parameter Manual', ref: 'p.89', date: '' },
+        { title: 'Motor Nameplate Photo (T. Kováč)', ref: '3 Feb 2026', date: '' },
+      ],
+    },
+    {
+      id: 's5', userId: 'jozef', time: hrsAgo(2.1),
+      text: '@kobi What\'s the restart sequence after a belt break on this machine?',
+    },
+    {
+      id: 's6', userId: 'kobi', time: hrsAgo(2.1),
+      isBot: true,
+      markdown: `**Belt Break Recovery — Siemens S7-1500 CNC (Line 3)**
+
+1. **Emergency stop** — confirm E-STOP engaged (red mushroom, panel left)
+2. **Open guard door** — wait for spindle to stop (≤30 s)
+3. **Inspect belt** — check timing belt condition, tension pulley, debris
+4. **Replace belt** — part **3M-225-6** (shelf B3-12)
+5. **Reset sequence**: release E-STOP · RESET on operator panel · run \`G28 U0 W0\` · confirm no alarms
+6. **Test cut** — run program \`O0001\` before production
+
+💡 *Tip from technician J. Novák (12 Mar 2026): After belt replacement on this machine, always re-tension to **4.5 N** using the Gates gauge. Factory spec says 4.0 N but it slips under high feed.*`,
+      sources: [
+        { title: 'Operator Manual', ref: '§12.4', date: '' },
+        { title: 'Maintenance Log #MK-2026-0312', ref: 'J. Novák', date: '', isNote: true },
+        { title: 'Spare Parts Inventory', ref: '', date: '' },
+      ],
+    },
+  ],
+
+  'machine-kuka': [
+    {
+      id: 'k1', userId: 'martin', time: 'Yesterday 08:30',
+      text: '@kobi The KR 60 welding arc is drifting on pass 3 — what\'s the most likely cause?',
+    },
+    {
+      id: 'k2', userId: 'kobi', time: 'Yesterday 08:30',
+      isBot: true,
+      markdown: `**Welding Arc Drift — KUKA KR 60-3 Diagnosis**
+
+Most common causes of arc drift on pass 3:
+
+1. **TCP (Tool Centre Point) deviation** — occurs after tip replacement if TCP not recalibrated. Drift typically 0.5–2 mm.
+2. **Worn welding tip** — contact tube wear causes arc instability. Check tip wear at >87% duty cycle.
+3. **Wire feed inconsistency** — check wire spool tension and liner condition
+4. **Workpiece fixture shift** — verify clamp torque and datum points
+
+**Recommended first action**: Run \`$TOOL_CAL[1]\` calibration routine from KRC4 pendant. Takes ~4 minutes.`,
+      sources: [
+        { title: 'KUKA System Software KSS 8.6 Manual', ref: 'Ch.14 TCP Calibration', date: '' },
+        { title: 'Tech note — M. Horváth', ref: '5 Feb 2026', date: '', isNote: true },
+      ],
+    },
+    {
+      id: 'k3', userId: 'martin', time: 'Yesterday 09:12',
+      text: '@kobi How do I run the TCP calibration safely with the safety fence open?',
+    },
+    {
+      id: 'k4', userId: 'kobi', time: 'Yesterday 09:12',
+      isBot: true,
+      markdown: `**TCP Calibration — Safety Override Procedure**
+
+⚠️ **Safety first** — this procedure requires T1 (manual reduced speed ≤250 mm/s).
+
+1. Set KRC4 operating mode to **T1** (key switch)
+2. Acknowledge safety fence override on pendant: \`Safety → Ext. Area → Acknowledge\`
+3. Enable enabling switch (3-position) — hold center position throughout
+4. Navigate: \`Menu → Startup → Calibrate → Tool → ABC World\`
+5. Touch reference point 4 times from different orientations
+6. Accept result if deviation < 0.15 mm
+
+**Do NOT use T2 or AUT mode during open-fence calibration.**`,
+      sources: [
+        { title: 'KUKA SafeOperation Manual', ref: 'p.88', date: '' },
+        { title: 'Plant Safety SOP-042', ref: 'Rev 3, Jan 2026', date: '' },
+      ],
+    },
+    {
+      id: 'k5', userId: 'tomas', time: minsAgo(90),
+      text: 'Arc alignment confirmed after TCP recal. Running test welds now — looks good.',
+    },
+  ],
+
+  'machine-zund': [
+    {
+      id: 'z1', userId: 'pavol', time: 'Yesterday 14:00',
+      text: '@kobi Vacuum table is losing pressure in zone 3 — how do I diagnose?',
+    },
+    {
+      id: 'z2', userId: 'kobi', time: 'Yesterday 14:00',
+      isBot: true,
+      markdown: `**Vacuum Table Pressure Loss — Zone 3 Diagnostic (Zünd G3)**
+
+Step-by-step isolation:
+
+1. **Check zone valve** — open Zünd Cut Center → Diagnostics → Vacuum → Zone 3 valve status. Should read OPEN when cutting.
+2. **Inspect sealing strips** — worn perimeter seal allows leak. Run hand over edge while table is active — feel for suction loss.
+3. **Debris blockage** — foam or material scraps can block vacuum holes. Use compressed air to clear (60 PSI max).
+4. **Pump capacity check** — if zones 1–2 also degrading, vacuum pump filter may be saturated (replace every 500h).
+
+📊 Expected pressure: **≥ −68 kPa** in zone 3 during active cut.`,
+      sources: [
+        { title: 'Zünd G3 Operator Manual', ref: 'Ch.9 Vacuum System', date: '' },
+        { title: 'Maintenance Note — P. Kováč', ref: '28 Jan 2026', date: '', isNote: true },
+      ],
+    },
+    {
+      id: 'z3', userId: 'pavol', time: 'Yesterday 15:30',
+      text: '@kobi Found debris in zone 3 ports. Cleared. Pressure back to -71 kPa. Thanks.',
+    },
+    {
+      id: 'z4', userId: 'kobi', time: 'Yesterday 15:30',
+      isBot: true,
+      markdown: `Great — −71 kPa is nominal. I've logged this resolution to the Zünd G3 maintenance history.
+
+💡 *Tip: Zone 3 is directly below the film-feed path — it collects more debris than zones 1–2. Consider adding it to the daily pre-shift checklist.*`,
+      sources: [
+        { title: 'Zünd G3 Preventive Maintenance Schedule', ref: 'Rev 2.1', date: '' },
+      ],
+    },
+  ],
+
+  'docs-drop': [
+    {
+      id: 'dd1', userId: 'kobi', time: '3 days ago 09:12', isBot: true,
+      isIngestion: true,
+      file: { name: 'KUKA_KR60_System_Manual_v4.pdf', size: '18.4', pages: 461, chunks: 2840, diagrams: 94, machine: '#machine-kuka-kr-60', status: 'indexed' },
+    },
+    {
+      id: 'dd2', userId: 'kobi', time: '2 days ago 11:47', isBot: true,
+      isIngestion: true,
+      file: { name: 'Zund_G3_Operator_Manual_EN.pdf', size: '16.5', pages: 412, chunks: 1034, diagrams: 23, machine: '#machine-zund-g3', status: 'indexed' },
+    },
+    {
+      id: 'dd3', userId: 'kobi', time: 'Yesterday 08:02', isBot: true,
+      isIngestion: true,
+      file: { name: 'Siemens_SINAMICS_S120_FaultManual.pdf', size: '9.2', pages: 231, chunks: 1420, diagrams: 67, machine: '#machine-siemens-s7-1500', status: 'indexed' },
+    },
+  ],
+
+  incidents: [],
+};
+
+const incidents = [
+  { id: 'INC-2026-0482', machine: 'Zünd G3 Cutting', issue: 'Belt tension warning', severity: 'warning', status: 'resolved', openedBy: 'pavol', resolvedBy: 'pavol', opened: '3 days ago', resolved: '2 days ago', notes: 'Detected minor drift on pressure — tensioned and cleaned rail.', resolution: 'Permanent', mttr: '2h 14m', parts: [] },
+  { id: 'INC-2026-0483', machine: 'Siemens S7-1500 CNC', issue: 'F-304 Overcurrent', severity: 'critical', status: 'resolved', openedBy: 'jozef', resolvedBy: 'jozef', opened: '2 days ago', resolved: '2 days ago', notes: 'Winding resistance low on phase V. Motor replaced.', resolution: 'Permanent', mttr: '1h 42m', parts: ['Siemens Motor 1FK7083-5AF71'] },
+  { id: 'INC-2026-0484', machine: 'KUKA KR 60-3', issue: 'TCP calibration alert', severity: 'warning', status: 'resolved', openedBy: 'martin', resolvedBy: 'martin', opened: '2 days ago', resolved: '2 days ago', notes: 'TCP deviation 1.2 mm after tip change. Recalibrated.', resolution: 'Permanent', mttr: '0h 28m', parts: ['Welding tip WA-120'] },
+  { id: 'INC-2026-0485', machine: 'Conveyor L4', issue: 'Sensor calibration drift', severity: 'warning', status: 'open', openedBy: 'tomas', resolvedBy: null, opened: 'Yesterday', resolved: null, notes: 'SICK IME30 proximity sensor drifting ±3mm. Requires replacement.', resolution: null, mttr: null, parts: [] },
+  { id: 'INC-2026-0486', machine: 'KUKA KR 60-3', issue: 'Welding arc misalignment', severity: 'warning', status: 'in-progress', openedBy: 'martin', resolvedBy: null, opened: 'Today 08:45', resolved: null, notes: 'Arc drift diagnosed to TCP deviation. Recalibration in progress.', resolution: null, mttr: null, parts: [] },
+  { id: 'INC-2026-0487', machine: 'Siemens S7-1500 CNC', issue: 'F-304 Overcurrent repeat', severity: 'critical', status: 'awaiting-approval', openedBy: 'jozef', resolvedBy: null, opened: 'Today 09:14', resolved: null, notes: 'Timing belt snapped mid-cut. Replaced with 3M-225-6, tension 4.5N.', resolution: 'Permanent', mttr: null, parts: ['Timing belt 3M-225-6'] },
+];
+
+const dashboardKPIs = {
+  mttr: { value: 47, unit: 'min', trend: -12, trendDir: 'down' },
+  openIncidents: { value: 7, trend: 2, trendDir: 'up' },
+  aiQueriesToday: { value: 142, trend: 23, trendDir: 'up' },
+  knowledgeNotes: { value: 1847, trend: 31, trendDir: 'up' },
+};
+
+// Generate last 30 days of AI query data
+const aiQueryData = Array.from({length: 30}, (_, i) => ({
+  day: i + 1,
+  queries: Math.round(40 + (i * 3.5) + (i > 18 ? (i - 18) * 4 : 0) + (Math.random() * 10 - 5)),
+}));
+
+// MTTR trend last 12 weeks
+const mttrData = Array.from({length: 12}, (_, i) => ({
+  week: `W${i + 1}`,
+  mttr: Math.round(68 - (i * 2.2) + (Math.random() * 4 - 2)),
+  kobiDeployed: i === 6,
+}));
+
+// Knowledge growth
+const knowledgeData = Array.from({length: 12}, (_, i) => ({
+  week: `W${i + 1}`,
+  chunks: Math.round((i / 11) * 12340 * (0.6 + Math.random() * 0.4)),
+})).sort((a,b) => a.chunks - b.chunks);
+
+const incidentsByMachine = [
+  { machine: 'Siemens S7-1500', count: 12 },
+  { machine: 'KUKA KR 60-3', count: 8 },
+  { machine: 'Zünd G3', count: 5 },
+  { machine: 'Conveyor L4', count: 3 },
+  { machine: 'Compressor', count: 2 },
+];
+
+const predictiveAlerts = [
+  { id: 'a1', machine: 'KUKA KR 60-3', type: 'warning', message: 'Welding tip wear at 87% — schedule replacement within 2 shifts' },
+  { id: 'a2', machine: 'Compressor Unit', type: 'warning', message: 'Vibration pattern matches pre-failure signature from Oct 2025' },
+  { id: 'a3', machine: 'Siemens S7-1500', type: 'info', message: '3 similar F-304 incidents in 14 days — possible motor degradation' },
+];
+
+const botResponses = {
+  siemens: [
+    {
+      trigger: ['F-304', 'belt', 'restart', 'overcurrent', 'error'],
+      markdown: `**F-304 — Overcurrent: Follow-up Analysis**
+
+Based on the repeated F-304 pattern this week, I'm seeing a possible motor degradation trend on Line 3.
+
+**Updated recommended actions:**
+1. Schedule a full motor winding resistance test (all 3 phases) during next planned downtime
+2. Check thermal overload history in drive parameters r0947[0..7]
+3. Review bearing condition — worn bearings increase current draw
+
+**Parts to have ready**: Motor 1FK7083-5AF71 (1 unit in warehouse, shelf D2-04)
+
+⚠️ 3 F-304 incidents in 14 days = investigate root cause before next shift.`,
+      sources: [
+        { title: 'Siemens SINAMICS Diagnostics Guide', ref: 'p.312', date: '' },
+        { title: 'Maintenance Log #MK-2026-0418', ref: 'J. Novák · Today', date: '', isNote: true },
+      ],
+    },
+    {
+      trigger: ['p0304', 'parameter', 'rated'],
+      markdown: `**Parameter Deep Dive — p0304 & Related Parameters**
+
+For your Siemens 1FK7083-5AF71 on Line 3:
+
+| Parameter | Expected | Actual | Status |
+|-----------|----------|--------|--------|
+| p0304 (Rated Current) | 12.5 A | 12.5 A | ✅ |
+| p0305 (Rated Speed) | 2000 rpm | 2000 rpm | ✅ |
+| p0307 (Rated Power) | 4.0 kW | 4.0 kW | ✅ |
+| r0027 (Output Current) | < 12.5 A | 13.1 A | ⚠️ |
+
+r0027 shows 13.1 A — slightly above rated. Monitor closely.`,
+      sources: [
+        { title: 'SINAMICS S120 Parameter Manual', ref: 'p.89–91', date: '' },
+        { title: 'CNC Line 3 Commissioning Sheet', ref: 'Jan 2019', date: '' },
+      ],
+    },
+  ],
+  kuka: [
+    {
+      trigger: ['arc', 'drift', 'welding', 'TCP', 'calibration'],
+      markdown: `**Welding Arc Drift — Updated Diagnosis**
+
+After reviewing the KR 60-3 incident history:
+
+The recurring arc drift on pass 3 correlates with welding tip change cycles. TCP deviation accumulates ~0.3 mm per tip change if calibration is skipped.
+
+**Recommended protocol change:**
+- Mandatory TCP calibration after every tip replacement (adds 4 min to procedure)
+- Add tip wear check to daily pre-shift checklist at 80% threshold (current: replace at 95%)
+
+**Upcoming maintenance window**: Schedule 45-min TCP + wire feed inspection before Friday production.`,
+      sources: [
+        { title: 'KUKA KSS 8.6 Maintenance Guide', ref: 'Ch.7.3', date: '' },
+        { title: 'Incident INC-2026-0484', ref: 'Resolved by M. Horváth', date: '', isNote: true },
+      ],
+    },
+  ],
+  zund: [
+    {
+      trigger: ['vacuum', 'pressure', 'zone', 'knife', 'film'],
+      markdown: `**Zünd G3 Vacuum System — Zone 3 Follow-up**
+
+Based on the debris clearing yesterday, I've updated the maintenance recommendation:
+
+**Zone 3 shows 3× higher debris accumulation** than zones 1–2 (film-feed path alignment).
+
+**Proposed preventive action:**
+- Add Zone 3 vacuum port inspection to pre-shift checklist (5 min)
+- Replace sealing strips Q2 2026 (current wear: 73%)
+- Knife pressure recalibration recommended — current: 38 daN, optimal: 40–42 daN for this material
+
+📄 I've flagged this for the next maintenance window schedule.`,
+      sources: [
+        { title: 'Zünd G3 PM Schedule', ref: 'Rev 2.1', date: '' },
+        { title: 'Note — P. Kováč', ref: 'Yesterday', date: '', isNote: true },
+      ],
+    },
+  ],
+};
+
+const voicePrefills = {
+  'machine-siemens': '@kobi The drive is throwing F-304 again — same as last week?',
+  'machine-kuka': '@kobi Welding arc keeps drifting on KR 60 — what\'s the most likely cause?',
+  'machine-zund': '@kobi Vacuum table is losing pressure in zone 3 — how do I diagnose?',
+  general: '@kobi What are the most common issues this week across all machines?',
+  incidents: '@kobi Show me the open incidents with highest severity.',
+  'docs-drop': '@kobi What documents have been indexed in the last 7 days?',
+};
+
+const i18n = {
+  en: {
+    findChannel: 'Find channel',
+    channels: 'Channels',
+    directMessages: 'Direct Messages',
+    threads: 'Threads',
+    writeTo: 'Write to',
+    replyToThread: 'Reply to thread',
+    addNote: 'Add Note',
+    incident: 'Log Incident',
+    search: 'Jump to…',
+    dashboard: 'Manager Dashboard',
+    onPrem: 'On-prem · No cloud',
+    viewAs: 'View as',
+    technician: 'Technician',
+    manager: 'Manager',
+    machineCard: 'Machine Card',
+    logbook: 'Logbook',
+    askKobi: 'Ask Kobi',
+    members: 'members',
+    pinned: 'Pinned',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    thinking: 'KobiAI is thinking…',
+    sources: 'Sources',
+    save: 'Save',
+    cancel: 'Cancel',
+    submit: 'Submit for approval',
+    noteSaved: 'Note saved. AI knowledge updated.',
+    incidentSubmitted: 'Incident submitted. Awaiting manager approval.',
+    indexed: 'Indexed',
+    parsing: 'Parsing…',
+    dropDocs: 'Drop documents here to feed the AI',
+    onPremTitle: 'Your data never leaves this factory.',
+    close: 'Close',
+    openIncidents: 'Open Incidents',
+    mttr: 'MTTR',
+    aiQueries: 'AI Queries Today',
+    knowledgNotes: 'Knowledge Notes',
+    resetDemo: 'Reset Demo',
+  },
+  sk: {
+    findChannel: 'Hľadať kanál',
+    channels: 'Kanály',
+    directMessages: 'Priame správy',
+    threads: 'Vlákna',
+    writeTo: 'Písať do',
+    replyToThread: 'Odpovedať vo vlákne',
+    addNote: 'Pridať poznámku',
+    incident: 'Zaznamenať incident',
+    search: 'Prejsť na…',
+    dashboard: 'Manažérsky prehľad',
+    onPrem: 'On-prem · Bez cloudu',
+    viewAs: 'Zobraziť ako',
+    technician: 'Technik',
+    manager: 'Manažér',
+    machineCard: 'Karta stroja',
+    logbook: 'Logbook',
+    askKobi: 'Opýtať Kobi',
+    members: 'členov',
+    pinned: 'Pripnuté',
+    today: 'Dnes',
+    yesterday: 'Včera',
+    thinking: 'KobiAI premýšľa…',
+    sources: 'Zdroje',
+    save: 'Uložiť',
+    cancel: 'Zrušiť',
+    submit: 'Odoslať na schválenie',
+    noteSaved: 'Poznámka uložená. Znalostná báza aktualizovaná.',
+    incidentSubmitted: 'Incident odoslaný. Čaká sa na schválenie.',
+    indexed: 'Indexované',
+    parsing: 'Spracovávam…',
+    dropDocs: 'Presuňte dokumenty sem pre AI',
+    onPremTitle: 'Vaše dáta neopustia závod.',
+    close: 'Zavrieť',
+    openIncidents: 'Otvorené incidenty',
+    mttr: 'MTTR',
+    aiQueries: 'AI Dotazy dnes',
+    knowledgNotes: 'Poznámky znalostnej bázy',
+    resetDemo: 'Resetovať demo',
+  },
+  de: {
+    findChannel: 'Kanal suchen',
+    channels: 'Kanäle',
+    directMessages: 'Direktnachrichten',
+    threads: 'Threads',
+    writeTo: 'Schreiben an',
+    dashboard: 'Manager Dashboard',
+    onPrem: 'On-Premise · Keine Cloud',
+    viewAs: 'Ansicht als',
+    technician: 'Techniker',
+    manager: 'Manager',
+    sources: 'Quellen',
+    thinking: 'KobiAI denkt…',
+    save: 'Speichern',
+    cancel: 'Abbrechen',
+    today: 'Heute',
+    yesterday: 'Gestern',
+    close: 'Schließen',
+    resetDemo: 'Demo zurücksetzen',
+  },
+  cz: {
+    findChannel: 'Hledat kanál',
+    channels: 'Kanály',
+    directMessages: 'Přímé zprávy',
+    threads: 'Vlákna',
+    writeTo: 'Napsat do',
+    dashboard: 'Manažerský přehled',
+    onPrem: 'On-prem · Bez cloudu',
+    viewAs: 'Zobrazit jako',
+    technician: 'Technik',
+    manager: 'Manažer',
+    sources: 'Zdroje',
+    thinking: 'KobiAI přemýšlí…',
+    save: 'Uložit',
+    cancel: 'Zrušit',
+    today: 'Dnes',
+    yesterday: 'Včera',
+    close: 'Zavřít',
+    resetDemo: 'Resetovat demo',
+  },
+  pl: {
+    findChannel: 'Znajdź kanał',
+    channels: 'Kanały',
+    directMessages: 'Wiadomości bezpośrednie',
+    threads: 'Wątki',
+    writeTo: 'Pisz do',
+    dashboard: 'Panel menedżera',
+    onPrem: 'On-prem · Bez chmury',
+    viewAs: 'Widok jako',
+    technician: 'Technik',
+    manager: 'Menedżer',
+    sources: 'Źródła',
+    thinking: 'KobiAI myśli…',
+    save: 'Zapisz',
+    cancel: 'Anuluj',
+    today: 'Dzisiaj',
+    yesterday: 'Wczoraj',
+    close: 'Zamknij',
+    resetDemo: 'Zresetuj demo',
+  },
+};
+
+return { users, channels, machines, conversations, incidents, dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine, predictiveAlerts, botResponses, voicePrefills, i18n };
+})();
+</script>
+<script>const { useState, useEffect, useRef, useCallback, createContext, useContext } = React;
+
+// KobiAI Context — global state for role, language, device, demo state
+
+
+const KobiCtx = createContext(null);
+
+function KobiProvider({ children }) {
+  const [role, setRole] = useState('manager');
+  const [language, setLanguage] = useState('en');
+  const [deviceMode, setDeviceMode] = useState('desktop');
+  const [activeChannel, setActiveChannel] = useState('dashboard');
+  const [rightPanel, setRightPanel] = useState(null);
+  const [notesAdded, setNotesAdded] = useState(false);
+  const [openIncidentCount, setOpenIncidentCount] = useState(3);
+  const [showOnPremModal, setShowOnPremModal] = useState(false);
+  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [toasts, setToasts] = useState([]);
+
+  // messages: channelSlug -> Message[]
+  const [messages, setMessages] = useState(() => {
+    const d = window.KobiData;
+    return {
+      general: d.conversations.general,
+      'machine-siemens': d.conversations['machine-siemens'],
+      'machine-kuka': d.conversations['machine-kuka'],
+      'machine-zund': d.conversations['machine-zund'],
+      'docs-drop': d.conversations['docs-drop'],
+      incidents: d.incidents.map(inc => ({ id: inc.id, isIncidentCard: true, incident: inc })),
+      dashboard: [],
+    };
+  });
+
+  const t = useCallback((key) => {
+    const map = window.KobiData.i18n[language] || window.KobiData.i18n.en;
+    return map[key] || window.KobiData.i18n.en[key] || key;
+  }, [language]);
+
+  const addMessage = useCallback((channelSlug, msg) => {
+    setMessages(prev => ({
+      ...prev,
+      [channelSlug]: [...(prev[channelSlug] || []), msg],
+    }));
+  }, []);
+
+  const addToast = useCallback((msg, type = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+  }, []);
+
+  const switchRole = useCallback((newRole) => {
+    setRole(newRole);
+    setActiveChannel(newRole === 'manager' ? 'dashboard' : 'machine-siemens');
+    setRightPanel(null);
+  }, []);
+
+  const value = {
+    role, setRole: switchRole,
+    language, setLanguage,
+    deviceMode, setDeviceMode,
+    activeChannel, setActiveChannel,
+    rightPanel, setRightPanel,
+    notesAdded, setNotesAdded,
+    openIncidentCount, setOpenIncidentCount,
+    showOnPremModal, setShowOnPremModal,
+    showSearchOverlay, setShowSearchOverlay,
+    sidebarOpen, setSidebarOpen,
+    messages, addMessage,
+    toasts, addToast,
+    t,
+  };
+
+  return React.createElement(KobiCtx.Provider, { value }, children);
+}
+
+function useKobi() {
+  return useContext(KobiCtx);
+}
+
+Object.assign(window, { KobiProvider, useKobi });
+
+
+// KobiAI Left Sidebar — pure React.createElement, no JSX
+
+function Sidebar() {
+  const { role, activeChannel, setActiveChannel, setShowOnPremModal, setSidebarOpen, t } = useKobi();
+  const { channels, users } = window.KobiData;
+  const [channelSearch, setChannelSearch] = useState('');
+
+  const visibleChannels = channels.filter(ch => {
+    if (ch.managerOnly && role !== 'manager') return false;
+    if (channelSearch && !ch.name.includes(channelSearch.toLowerCase())) return false;
+    return true;
+  });
+
+  const machineChannels = visibleChannels.filter(ch => ch.machineId);
+  const otherChannels = visibleChannels.filter(ch => !ch.machineId && ch.slug !== 'dashboard');
+  const dashCh = visibleChannels.find(ch => ch.slug === 'dashboard');
+
+  const dms = [
+    { id: 'kobi', ...users.kobi },
+    { id: 'martin', ...users.martin },
+    { id: 'pavol', ...users.pavol },
+    { id: 'tomas', ...users.tomas },
+  ].filter(u => u.id !== (role === 'manager' ? 'martin' : 'jozef'));
+
+  const ce = React.createElement;
+
+  function NavItem({ slug, icon, label, mentions, isActive, onClick }) {
+    const [hov, setHov] = useState(false);
+    return ce('button', {
+      onClick,
+      onMouseEnter: () => setHov(true),
+      onMouseLeave: () => setHov(false),
+      style: {
+        display: 'flex', alignItems: 'center', gap: 8,
+        width: '100%', padding: '6px 12px',
+        background: isActive ? '#2F3E50' : hov ? '#243242' : 'transparent',
+        border: 'none',
+        borderLeft: isActive ? '3px solid #4CAF50' : '3px solid transparent',
+        color: isActive ? '#fff' : '#C5CCD4',
+        fontSize: 14, textAlign: 'left', cursor: 'pointer',
+        transition: 'background 0.1s',
+      }
+    },
+      ce('span', { style: { fontSize: 13, width: 16, textAlign: 'center', flexShrink: 0 } }, icon),
+      ce('span', { style: { flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, label),
+      mentions > 0 && ce('span', { style: { background: '#F44336', color: '#fff', borderRadius: 10, fontSize: 11, fontWeight: 700, padding: '1px 6px', minWidth: 18, textAlign: 'center' } }, mentions)
+    );
+  }
+
+  function SectionLabel({ label, showPlus }) {
+    return ce('div', {
+      style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 12px 4px', color: '#8B97A3', fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }
+    },
+      ce('span', null, '\u25BE ' + label),
+      showPlus && ce('button', { style: { background: 'none', border: 'none', color: '#8B97A3', cursor: 'pointer', fontSize: 16, padding: 0, lineHeight: 1 } }, '+')
+    );
+  }
+
+  return ce('div', { style: { display: 'flex', flexDirection: 'column', height: '100%', background: '#1B2733', color: '#C5CCD4', width: 240, flexShrink: 0, overflow: 'hidden' } },
+    // Team header
+    ce('div', { style: { padding: '14px 16px 10px', borderBottom: '1px solid #243242', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+      ce('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+        ce('div', { style: { width: 32, height: 32, background: '#1E3A5F', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 15, position: 'relative', flexShrink: 0 } },
+          'K',
+          ce('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, background: '#4CAF50', borderRadius: '50%', border: '2px solid #1B2733' } })
+        ),
+        ce('div', null,
+          ce('div', { style: { color: '#fff', fontWeight: 700, fontSize: 14, lineHeight: 1.2 } }, 'KobiAI'),
+          ce('div', { style: { color: '#8B97A3', fontSize: 11 } }, 'Bratislava Plant')
+        )
+      ),
+      ce('button', { style: { background: 'none', border: '1px solid #2F3E50', color: '#8B97A3', borderRadius: 6, width: 26, height: 26, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '+')
+    ),
+
+    // Search
+    ce('div', { style: { padding: '8px 10px' } },
+      ce('div', { style: { display: 'flex', alignItems: 'center', background: '#243242', borderRadius: 6, padding: '6px 10px', gap: 6 } },
+        ce('span', { style: { color: '#8B97A3', fontSize: 13 } }, '\uD83D\uDD0D'),
+        ce('input', {
+          value: channelSearch,
+          onChange: e => setChannelSearch(e.target.value),
+          placeholder: t('findChannel'),
+          style: { background: 'none', border: 'none', color: '#C5CCD4', fontSize: 13, flex: 1, outline: 'none' }
+        })
+      )
+    ),
+
+    // Nav items
+    ce('div', { style: { flex: 1, overflowY: 'auto', paddingBottom: 8 } },
+      ce(NavItem, { icon: '\uD83D\uDCAC', label: 'Threads', isActive: false, onClick: () => {} }),
+
+      dashCh && ce(React.Fragment, null,
+        ce(SectionLabel, { label: 'Overview' }),
+        ce(NavItem, { slug: 'dashboard', icon: '\uD83D\uDCCA', label: 'dashboard', isActive: activeChannel === 'dashboard', onClick: () => { setActiveChannel('dashboard'); setSidebarOpen(false); } })
+      ),
+
+      ce(SectionLabel, { label: t('channels'), showPlus: true }),
+      ...otherChannels.map(ch =>
+        ce(NavItem, { key: ch.slug, slug: ch.slug, icon: ch.icon, label: ch.name, mentions: ch.mentions, isActive: activeChannel === ch.slug, onClick: () => { setActiveChannel(ch.slug); setSidebarOpen(false); } })
+      ),
+      ...machineChannels.map(ch =>
+        ce(NavItem, { key: ch.slug, slug: ch.slug, icon: ch.icon, label: ch.name, isActive: activeChannel === ch.slug, onClick: () => { setActiveChannel(ch.slug); setSidebarOpen(false); } })
+      ),
+
+      ce(SectionLabel, { label: t('directMessages'), showPlus: true }),
+      ...dms.map(u =>
+        ce(NavItem, { key: u.id, slug: 'dm-' + u.id, icon: ce('span', { style: { position: 'relative', display: 'inline-flex' } },
+            ce('div', { style: { width: 20, height: 20, borderRadius: '50%', background: u.color || '#555', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', fontWeight: 700 } }, u.initials),
+            ce('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 6, height: 6, background: u.online ? '#4CAF50' : '#6B7A8D', borderRadius: '50%', border: '1.5px solid #1B2733' } })
+          ),
+          label: u.name, isActive: activeChannel === 'dm-' + u.id, onClick: () => { setActiveChannel('dm-' + u.id); setSidebarOpen(false); }
+        })
+      )
+    ),
+
+    // Footer
+    ce('button', {
+      onClick: () => setShowOnPremModal(true),
+      style: { padding: '10px 14px', background: 'none', border: 'none', borderTop: '1px solid #243242', color: '#8B97A3', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left', width: '100%' }
+    },
+      ce('span', { style: { color: '#4CAF50', fontSize: 14 } }, '\uD83D\uDD12'),
+      ce('span', null, t('onPrem'))
+    )
+  );
+}
+
+function SidebarDrawer() {
+  const { sidebarOpen, setSidebarOpen, deviceMode } = useKobi();
+  if (deviceMode !== 'mobile' || !sidebarOpen) return null;
+  return React.createElement('div', { style: { position: 'absolute', inset: 0, zIndex: 100, display: 'flex' } },
+    React.createElement('div', { onClick: () => setSidebarOpen(false), style: { position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' } }),
+    React.createElement('div', { style: { position: 'relative', zIndex: 1, height: '100%' } },
+      React.createElement(Sidebar)
+    )
+  );
+}
+
+Object.assign(window, { Sidebar, SidebarDrawer });
+
+
+// KobiAI Dialogs — AddNote, Incident, OnPrem, Search
+
+
+function Modal({ title, subtitle, width = 540, onClose, children, footer }) {
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  return React.createElement('div', {
+    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
+    onClick: (e) => { if (e.target === e.currentTarget) onClose(); }
+  },
+    React.createElement('div', {
+      style: { background: '#fff', borderRadius: 12, width: '100%', maxWidth: width, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', maxHeight: '90vh', overflow: 'hidden' }
+    },
+      React.createElement('div', { style: { padding: '18px 20px 14px', borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' } },
+        React.createElement('div', null,
+          React.createElement('div', { style: { fontWeight: 800, fontSize: 16, color: '#1A2433' } }, title),
+          subtitle && React.createElement('div', { style: { fontSize: 12, color: '#8B97A3', marginTop: 2 } }, subtitle)
+        ),
+        React.createElement('button', {
+          onClick: onClose,
+          style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 20, lineHeight: 1, padding: 2 }
+        }, '×')
+      ),
+      React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: '18px 20px' } }, children),
+      footer && React.createElement('div', { style: { padding: '12px 20px', borderTop: '1px solid #E8ECF0', display: 'flex', gap: 8, justifyContent: 'flex-end' } }, footer)
+    )
+  );
+}
+
+function Field({ label, required, children }) {
+  return React.createElement('div', { style: { marginBottom: 14 } },
+    React.createElement('label', { style: { display: 'block', fontSize: 13, fontWeight: 600, color: '#1A2433', marginBottom: 5 } },
+      label, required && React.createElement('span', { style: { color: '#F44336', marginLeft: 2 } }, '*')
+    ),
+    children
+  );
+}
+
+function TextArea({ value, onChange, placeholder, rows = 4, voiceText }) {
+  const [voiceActive, setVoiceActive] = useState(false);
+
+  const handleVoice = () => {
+    if (voiceActive) return;
+    setVoiceActive(true);
+    setTimeout(() => {
+      setVoiceActive(false);
+      let i = 0;
+      const iv = setInterval(() => {
+        onChange(voiceText.slice(0, ++i));
+        if (i >= voiceText.length) clearInterval(iv);
+      }, 28);
+    }, 2000);
+  };
+
+  return React.createElement('div', { style: { position: 'relative' } },
+    React.createElement('textarea', {
+      value, onChange: e => onChange(e.target.value), placeholder, rows,
+      style: { width: '100%', padding: '9px 36px 9px 10px', border: '1px solid #C5D0DB', borderRadius: 8, fontSize: 13, color: '#1A2433', resize: 'vertical', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.5, boxSizing: 'border-box', outline: 'none' }
+    }),
+    React.createElement('button', {
+      onClick: handleVoice,
+      title: 'Voice input',
+      style: { position: 'absolute', right: 8, top: 8, background: voiceActive ? '#FEE' : 'none', border: 'none', cursor: 'pointer', fontSize: 15, padding: 3, borderRadius: 4, color: voiceActive ? '#F44336' : '#9BA8B4', transition: 'all 0.2s' }
+    }, voiceActive ? '🔴' : '🎤')
+  );
+}
+
+function SegmentedControl({ options, value, onChange }) {
+  return React.createElement('div', { style: { display: 'flex', border: '1px solid #C5D0DB', borderRadius: 8, overflow: 'hidden' } },
+    options.map(opt => React.createElement('button', {
+      key: opt.value,
+      onClick: () => onChange(opt.value),
+      style: {
+        flex: 1, padding: '7px 10px', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+        background: value === opt.value ? opt.color || '#1E3A5F' : '#fff',
+        color: value === opt.value ? '#fff' : '#555',
+        transition: 'all 0.15s',
+      }
+    }, opt.label))
+  );
+}
+
+function AddNoteDialog({ machine, onSave, onClose }) {
+  const { t } = useKobi();
+  const [category, setCategory] = useState('Repair');
+  const [text, setText] = useState('');
+  const [severity, setSeverity] = useState('info');
+  const [photoAttached, setPhotoAttached] = useState(false);
+
+  const voiceText = 'Replaced timing belt 3M-225-6. Re-tensioned to 4.5 N — factory spec says 4 but it slips under high feed. Confirmed with test cut O0001.';
+
+  const handleSave = () => {
+    if (!text.trim()) return;
+    onSave({ text: text.trim(), category, severity });
+  };
+
+  return React.createElement(Modal, {
+    title: '🧠 Add Maintenance Note',
+    subtitle: 'Knowledge captured here is immediately searchable by the AI',
+    onClose,
+    footer: React.createElement(React.Fragment, null,
+      React.createElement('button', { onClick: onClose, style: { padding: '8px 16px', border: '1px solid #C5D0DB', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 13, color: '#555' } }, t('cancel')),
+      React.createElement('button', { onClick: handleSave, disabled: !text.trim(), style: { padding: '8px 20px', background: text.trim() ? '#1E3A5F' : '#C5D0DB', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: text.trim() ? 'pointer' : 'default', fontSize: 13 } }, t('save'))
+    )
+  },
+    Field({ label: 'Machine', children:
+      React.createElement('div', { style: { display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 6, padding: '5px 10px', fontSize: 13, color: '#1E3A5F', fontWeight: 600 } },
+        React.createElement('span', null, '⚙️'),
+        React.createElement('span', null, machine?.name || 'Current Machine')
+      )
+    }),
+    Field({ label: 'Category', children:
+      React.createElement('select', {
+        value: category, onChange: e => setCategory(e.target.value),
+        style: { width: '100%', padding: '8px 10px', border: '1px solid #C5D0DB', borderRadius: 8, fontSize: 13, color: '#1A2433', background: '#fff', outline: 'none' }
+      },
+        ['Repair','Observation','Tip','Incident note'].map(c => React.createElement('option', { key: c }, c))
+      )
+    }),
+    Field({ label: 'What happened', required: true, children:
+      React.createElement(TextArea, { value: text, onChange: setText, placeholder: 'Describe what you saw or what you fixed…', rows: 4, voiceText })
+    }),
+    Field({ label: 'Severity', children:
+      React.createElement(SegmentedControl, {
+        value: severity,
+        onChange: setSeverity,
+        options: [
+          { value: 'info', label: 'Info', color: '#2196F3' },
+          { value: 'warning', label: 'Warning', color: '#FF9800' },
+          { value: 'critical', label: 'Critical', color: '#F44336' },
+        ]
+      })
+    }),
+    Field({ label: 'Photo (optional)', children:
+      React.createElement('div', null,
+        !photoAttached
+          ? React.createElement('button', {
+              onClick: () => setPhotoAttached(true),
+              style: { padding: '7px 14px', border: '1px dashed #C5D0DB', borderRadius: 8, background: '#FAFBFC', cursor: 'pointer', fontSize: 12, color: '#6B8EAE' }
+            }, '📷 Attach photo')
+          : React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: '#F0F5FA', border: '1px solid #C5D9EE', borderRadius: 8 } },
+              React.createElement('div', { style: { width: 40, height: 30, background: 'repeating-linear-gradient(45deg,#C5D0DB,#C5D0DB 2px,#E8EDF3 2px,#E8EDF3 6px)', borderRadius: 4 } }),
+              React.createElement('span', { style: { fontSize: 12, color: '#1E3A5F' } }, 'IMG_20260420_104532.jpg'),
+              React.createElement('button', { onClick: () => setPhotoAttached(false), style: { marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#9BA8B4', fontSize: 14 } }, '×')
+            )
+      )
+    })
+  );
+}
+
+function IncidentDialog({ machine, onSubmit, onClose }) {
+  const { t } = useKobi();
+  const [activeTab, setActiveTab] = useState('basics');
+  const [form, setForm] = useState({ location: '', description: '', severity: 'warning', component: '', resolution: 'Repaired', resolutionNotes: '', resolutionType: 'Permanent', parts: [] });
+  const setField = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  const voiceDesc = 'Timing belt snapped mid-cut on axis 3. Machine stopped immediately. No injury. Belt replaced with 3M-225-6, tension 4.5 N confirmed with Gates gauge. Test cut O0001 passed.';
+  const voiceRes = 'Belt replaced and tensioned to 4.5 N. Machine back in service. Test cut confirmed nominal operation.';
+
+  const handleSubmit = () => {
+    if (!form.description.trim()) return;
+    onSubmit(form);
+  };
+
+  return React.createElement(Modal, {
+    title: '🚨 Log Incident',
+    subtitle: 'Structured maintenance log · pushes to logbook and #incidents channel',
+    width: 680,
+    onClose,
+    footer: React.createElement(React.Fragment, null,
+      React.createElement('button', { onClick: onClose, style: { padding: '8px 16px', border: '1px solid #C5D0DB', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 13, color: '#555' } }, 'Save as draft'),
+      React.createElement('button', { onClick: handleSubmit, disabled: !form.description.trim(), style: { padding: '8px 20px', background: form.description.trim() ? '#F44336' : '#C5D0DB', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: form.description.trim() ? 'pointer' : 'default', fontSize: 13 } }, t('submit'))
+    )
+  },
+    // Tabs
+    React.createElement('div', { style: { display: 'flex', gap: 0, marginBottom: 18, borderBottom: '1px solid #E8ECF0' } },
+      [{ id: 'basics', label: '📋 Basics' }, { id: 'details', label: '🔧 Details & Parts' }].map(tab =>
+        React.createElement('button', {
+          key: tab.id,
+          onClick: () => setActiveTab(tab.id),
+          style: { padding: '8px 18px', background: 'none', border: 'none', borderBottom: activeTab === tab.id ? '2px solid #1E3A5F' : '2px solid transparent', color: activeTab === tab.id ? '#1E3A5F' : '#8B97A3', fontWeight: activeTab === tab.id ? 700 : 400, cursor: 'pointer', fontSize: 13, transition: 'all 0.15s' }
+        }, tab.label)
+      )
+    ),
+
+    activeTab === 'basics' && React.createElement(React.Fragment, null,
+      Field({ label: 'Machine', children:
+        React.createElement('div', { style: { display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 6, padding: '5px 10px', fontSize: 13, color: '#1E3A5F', fontWeight: 600 } },
+          React.createElement('span', null, machine?.name || 'Machine')
+        )
+      }),
+      Field({ label: 'Location in machine', children:
+        React.createElement('input', { value: form.location, onChange: e => setField('location', e.target.value), placeholder: 'e.g., Motor module slot 4', style: { width: '100%', padding: '8px 10px', border: '1px solid #C5D0DB', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' } })
+      }),
+      Field({ label: 'Fault description', required: true, children:
+        React.createElement(TextArea, { value: form.description, onChange: v => setField('description', v), placeholder: 'Describe the fault, symptoms, and what you observed…', rows: 4, voiceText: voiceDesc })
+      }),
+      Field({ label: 'Severity', children:
+        React.createElement(SegmentedControl, {
+          value: form.severity, onChange: v => setField('severity', v),
+          options: [{ value: 'info', label: 'Info', color: '#2196F3' }, { value: 'warning', label: 'Warning', color: '#FF9800' }, { value: 'critical', label: 'Critical', color: '#F44336' }]
+        })
+      })
+    ),
+
+    activeTab === 'details' && React.createElement(React.Fragment, null,
+      Field({ label: 'Component identified', children:
+        React.createElement(React.Fragment, null,
+          React.createElement('input', { value: form.component, onChange: e => setField('component', e.target.value), placeholder: 'e.g., Timing belt (3M-225-6)', list: 'components-list', style: { width: '100%', padding: '8px 10px', border: '1px solid #C5D0DB', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' } }),
+          React.createElement('datalist', { id: 'components-list' },
+            ['Timing belt (3M-225-6)', 'Servo drive', 'Proximity sensor SICK IME30', 'Welding tip WA-120', 'Motor 1FK7083-5AF71', 'Vacuum sealing strip'].map(c => React.createElement('option', { key: c, value: c }))
+          )
+        )
+      }),
+      Field({ label: 'Resolution', children:
+        React.createElement('select', {
+          value: form.resolution, onChange: e => setField('resolution', e.target.value),
+          style: { width: '100%', padding: '8px 10px', border: '1px solid #C5D0DB', borderRadius: 8, fontSize: 13, background: '#fff', outline: 'none' }
+        },
+          ['Repaired', 'Replaced', 'Workaround', 'Other'].map(r => React.createElement('option', { key: r }, r))
+        )
+      }),
+      Field({ label: 'Resolution notes', children:
+        React.createElement(TextArea, { value: form.resolutionNotes, onChange: v => setField('resolutionNotes', v), placeholder: 'What exactly was done to resolve the issue?', rows: 3, voiceText: voiceRes })
+      }),
+      Field({ label: 'Resolution type', children:
+        React.createElement(SegmentedControl, {
+          value: form.resolutionType, onChange: v => setField('resolutionType', v),
+          options: [{ value: 'Permanent', label: '✅ Permanent', color: '#4CAF50' }, { value: 'Temporary', label: '⚠️ Temporary', color: '#FF9800' }]
+        })
+      }),
+      Field({ label: 'Spare parts used', children:
+        React.createElement('div', null,
+          form.parts.map((p, i) => React.createElement('div', { key: i, style: { display: 'flex', gap: 6, marginBottom: 4 } },
+            React.createElement('input', { value: p.part, onChange: e => setField('parts', form.parts.map((x,j) => j===i ? {...x, part: e.target.value} : x)), placeholder: 'Part name', style: { flex: 1, padding: '6px 8px', border: '1px solid #C5D0DB', borderRadius: 6, fontSize: 12, outline: 'none' } }),
+            React.createElement('input', { value: p.qty, onChange: e => setField('parts', form.parts.map((x,j) => j===i ? {...x, qty: e.target.value} : x)), placeholder: 'Qty', type: 'number', style: { width: 60, padding: '6px 8px', border: '1px solid #C5D0DB', borderRadius: 6, fontSize: 12, outline: 'none' } }),
+            React.createElement('button', { onClick: () => setField('parts', form.parts.filter((_,j) => j!==i)), style: { background: 'none', border: 'none', cursor: 'pointer', color: '#F44336', fontSize: 16 } }, '×')
+          )),
+          React.createElement('button', {
+            onClick: () => setField('parts', [...form.parts, { part: '', qty: 1 }]),
+            style: { padding: '5px 12px', border: '1px dashed #C5D0DB', borderRadius: 6, background: 'none', cursor: 'pointer', fontSize: 12, color: '#6B8EAE' }
+          }, '+ Add part')
+        )
+      })
+    )
+  );
+}
+
+function OnPremModal() {
+  const { showOnPremModal, setShowOnPremModal, t } = useKobi();
+  if (!showOnPremModal) return null;
+  return React.createElement(Modal, { title: '', width: 560, onClose: () => setShowOnPremModal(false), footer:
+    React.createElement('button', { onClick: () => setShowOnPremModal(false), style: { padding: '8px 24px', background: '#1E3A5F', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 13 } }, t('close'))
+  },
+    React.createElement('div', { style: { textAlign: 'center', padding: '0 12px 8px' } },
+      React.createElement('div', { style: { fontSize: 52, marginBottom: 12 } }, '🏭'),
+      React.createElement('div', { style: { fontWeight: 800, fontSize: 20, color: '#1A2433', marginBottom: 12 } }, t('onPremTitle') || 'Your data never leaves this factory.'),
+      React.createElement('div', { style: { fontSize: 14, color: '#555', lineHeight: 1.7, marginBottom: 18 } },
+        'KobiAI runs entirely on your infrastructure. No cloud, no outbound traffic, no data shared with any third party.',
+        React.createElement('br'), React.createElement('br'),
+        'Every document, every question, every log stays on your server — inside your firewall, under your control.'
+      ),
+      React.createElement('div', { style: { display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 16 } },
+        ['On-Premise', 'Air-Gapped Capable', 'ISO 27001 / TISAX Ready'].map(badge =>
+          React.createElement('span', { key: badge, style: { background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#1E3A5F', fontWeight: 600 } }, badge)
+        )
+      ),
+      React.createElement('div', { style: { fontSize: 12, color: '#8B97A3', borderTop: '1px solid #E8ECF0', paddingTop: 12 } },
+        'Delivered as an on-prem appliance by Touch4IT · NIST · ISO 27001 · ISO 14001'
+      )
+    )
+  );
+}
+
+function SearchOverlay() {
+  const { showSearchOverlay, setShowSearchOverlay } = useKobi();
+  const [query, setQuery] = useState('');
+  if (!showSearchOverlay) return null;
+
+  const results = query.length > 1 ? [
+    { type: 'message', text: 'F-304 error on Siemens S7-1500 — motor overcurrent, winding check required', channel: '#machine-siemens-s7-1500', user: 'Jozef Novák', time: 'Today 09:14' },
+    { type: 'message', text: 'Timing belt 3M-225-6 replaced, tension 4.5N confirmed with Gates gauge', channel: '#machine-siemens-s7-1500', user: 'Kobi', time: 'Today 09:41' },
+    { type: 'message', text: 'Welding arc misalignment on KR 60-3 — TCP deviation 1.2mm after tip change', channel: '#incidents', user: 'Martin Horváth', time: 'Yesterday' },
+    { type: 'doc', text: 'Siemens SINAMICS S120 Fault Manual — F-304 Motor Module Overcurrent', ref: '247 pages · indexed 12 Mar 2026' },
+    { type: 'doc', text: 'KUKA System Software KSS 8.6 — TCP Calibration Procedure', ref: '312 pages · indexed 5 Feb 2026' },
+  ] : [];
+
+  return React.createElement('div', {
+    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 80 },
+    onClick: (e) => { if (e.target === e.currentTarget) setShowSearchOverlay(false); }
+  },
+    React.createElement('div', { style: { background: '#fff', borderRadius: 12, width: '100%', maxWidth: 620, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', overflow: 'hidden' } },
+      React.createElement('div', { style: { padding: '14px 16px', borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'center', gap: 10 } },
+        React.createElement('span', { style: { color: '#8B97A3', fontSize: 16 } }, '🔍'),
+        React.createElement('input', {
+          autoFocus: true, value: query, onChange: e => setQuery(e.target.value),
+          placeholder: 'Search messages, documents, notes…',
+          style: { flex: 1, border: 'none', outline: 'none', fontSize: 15, color: '#1A2433' }
+        }),
+        React.createElement('button', { onClick: () => setShowSearchOverlay(false), style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 13 } }, 'Esc')
+      ),
+      results.length > 0 && React.createElement('div', { style: { padding: '8px 0', maxHeight: 360, overflowY: 'auto' } },
+        results.map((r, i) => React.createElement('div', {
+          key: i, onClick: () => setShowSearchOverlay(false),
+          style: { padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid #F7F9FB', display: 'flex', gap: 10 },
+          onMouseEnter: e => e.currentTarget.style.background = '#F7F9FB',
+          onMouseLeave: e => e.currentTarget.style.background = '#fff',
+        },
+          React.createElement('span', { style: { fontSize: 16, flexShrink: 0 } }, r.type === 'doc' ? '📄' : '💬'),
+          React.createElement('div', null,
+            React.createElement('div', { style: { fontSize: 13, color: '#1A2433', marginBottom: 2 } }, r.text),
+            React.createElement('div', { style: { fontSize: 11, color: '#9BA8B4' } }, r.type === 'doc' ? r.ref : `${r.channel} · ${r.user} · ${r.time}`)
+          )
+        ))
+      ),
+      query.length <= 1 && React.createElement('div', { style: { padding: '24px 16px', textAlign: 'center', color: '#9BA8B4', fontSize: 13 } }, 'Type to search messages, documents, notes…')
+    )
+  );
+}
+
+function ToastContainer() {
+  const { toasts } = useKobi();
+  return React.createElement('div', { style: { position: 'fixed', bottom: 24, right: 24, zIndex: 400, display: 'flex', flexDirection: 'column', gap: 8 } },
+    toasts.map(toast => React.createElement('div', {
+      key: toast.id,
+      style: {
+        background: toast.type === 'success' ? '#1B3A1B' : toast.type === 'info' ? '#1A2E45' : '#3A1B1B',
+        color: '#fff', padding: '12px 18px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', gap: 8,
+        animation: 'slideInRight 0.25s ease-out',
+        maxWidth: 320,
+      }
+    },
+      React.createElement('span', { style: { fontSize: 16 } }, toast.type === 'success' ? '✅' : toast.type === 'info' ? 'ℹ️' : '⚠️'),
+      toast.msg
+    ))
+  );
+}
+
+Object.assign(window, { AddNoteDialog, IncidentDialog, OnPremModal, SearchOverlay, ToastContainer });
+
+
+// KobiAI Dashboard — KPI cards, charts, incidents table, alerts
+
+
+// Simple SVG line chart
+function LineChart({ data, xKey, yKey, color = '#1E3A5F', height = 80, annotation }) {
+  if (!data?.length) return null;
+  const vals = data.map(d => d[yKey]);
+  const min = Math.min(...vals) * 0.9;
+  const max = Math.max(...vals) * 1.05;
+  const w = 300, h = height;
+  const pts = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((d[yKey] - min) / (max - min)) * h;
+    return [x, y];
+  });
+  const path = pts.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(' ');
+  const area = `${path} L${w},${h} L0,${h} Z`;
+
+  return React.createElement('svg', { viewBox: `0 0 ${w} ${h}`, style: { width: '100%', height } },
+    React.createElement('defs', null,
+      React.createElement('linearGradient', { id: `grad-${color.replace('#','')}`, x1: 0, y1: 0, x2: 0, y2: 1 },
+        React.createElement('stop', { offset: '0%', stopColor: color, stopOpacity: 0.2 }),
+        React.createElement('stop', { offset: '100%', stopColor: color, stopOpacity: 0.02 })
+      )
+    ),
+    React.createElement('path', { d: area, fill: `url(#grad-${color.replace('#','')})` }),
+    React.createElement('path', { d: path, fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }),
+    annotation && pts[annotation.idx] && React.createElement('g', null,
+      React.createElement('circle', { cx: pts[annotation.idx][0], cy: pts[annotation.idx][1], r: 4, fill: color }),
+      React.createElement('text', { x: pts[annotation.idx][0] + 4, y: pts[annotation.idx][1] - 6, fontSize: 9, fill: '#555' }, annotation.label)
+    )
+  );
+}
+
+function BarChart({ data, xKey, yKey, color = '#1E3A5F', height = 120 }) {
+  if (!data?.length) return null;
+  const max = Math.max(...data.map(d => d[yKey]));
+  return React.createElement('div', { style: { display: 'flex', alignItems: 'flex-end', gap: 4, height, padding: '0 4px' } },
+    data.map((d, i) => React.createElement('div', { key: i, style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 } },
+      React.createElement('div', { style: { fontSize: 9, color: '#9BA8B4', fontWeight: 600 } }, d[yKey]),
+      React.createElement('div', { style: { width: '100%', background: color, borderRadius: '3px 3px 0 0', height: `${(d[yKey] / max) * (height - 30)}px`, transition: 'height 0.4s ease', opacity: 0.85 + (i / data.length) * 0.15 } }),
+      React.createElement('div', { style: { fontSize: 8, color: '#9BA8B4', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' } }, d[xKey].split(' ')[0])
+    ))
+  );
+}
+
+function HorizontalBar({ data, maxVal, color = '#1E3A5F' }) {
+  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+    data.map((d, i) => React.createElement('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: 8 } },
+      React.createElement('div', { style: { width: 110, fontSize: 11, color: '#555', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, d.machine),
+      React.createElement('div', { style: { flex: 1, height: 14, background: '#F0F2F4', borderRadius: 7, overflow: 'hidden' } },
+        React.createElement('div', { style: { height: '100%', width: `${(d.count / maxVal) * 100}%`, background: color, borderRadius: 7, transition: 'width 0.5s ease' } })
+      ),
+      React.createElement('div', { style: { width: 20, fontSize: 11, fontWeight: 700, color: '#1E3A5F' } }, d.count)
+    ))
+  );
+}
+
+function KpiCard({ label, value, unit, trend, trendDir, sparkData, sparkKey, pulse, color = '#1E3A5F' }) {
+  const [pulsing, setPulsing] = useState(false);
+  const [displayVal, setDisplayVal] = useState(value);
+
+  useEffect(() => {
+    if (pulse) {
+      setPulsing(true);
+      setDisplayVal(value + 1);
+      const t = setTimeout(() => setPulsing(false), 800);
+      return () => clearTimeout(t);
+    }
+  }, [pulse]);
+
+  const trendColor = trendDir === 'down' ? '#4CAF50' : '#F44336';
+  const trendIcon = trendDir === 'down' ? '▼' : '▲';
+
+  return React.createElement('div', {
+    style: {
+      background: pulsing ? '#F0FFF4' : '#fff',
+      border: `1px solid ${pulsing ? '#4CAF50' : '#E4E7EB'}`,
+      borderRadius: 12, padding: '16px 18px',
+      transition: 'all 0.4s ease', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+      flex: 1, minWidth: 160,
+    }
+  },
+    React.createElement('div', { style: { fontSize: 12, color: '#8B97A3', fontWeight: 600, letterSpacing: '0.04em', marginBottom: 6 } }, label),
+    React.createElement('div', { style: { display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 } },
+      React.createElement('span', { style: { fontSize: 28, fontWeight: 800, color: '#1A2433' } }, displayVal.toLocaleString()),
+      unit && React.createElement('span', { style: { fontSize: 14, color: '#8B97A3' } }, unit)
+    ),
+    trend !== undefined && React.createElement('div', { style: { fontSize: 12, color: trendColor, fontWeight: 600, marginBottom: 8 } },
+      `${trendIcon}${Math.abs(trend)}${typeof trend === 'number' && trend < 10 ? '' : '%'} ${trendDir === 'down' ? 'improvement' : 'this week'}`
+    ),
+    sparkData && React.createElement(LineChart, { data: sparkData, xKey: 'day', yKey: sparkKey, color, height: 40 })
+  );
+}
+
+function IncidentsTable({ incidents, onRowClick }) {
+  const statusColors = { resolved: '#4CAF50', 'in-progress': '#FF9800', open: '#F44336', 'awaiting-approval': '#FF9800' };
+  const statusLabels = { resolved: '🟢 Resolved', 'in-progress': '🟡 In Progress', open: '🔴 Open', 'awaiting-approval': '🟠 Awaiting' };
+  const [sortBy, setSortBy] = useState('time');
+
+  const rows = [
+    { time: 'Today 09:14', machine: 'Siemens S7-1500', issue: 'F-304 Overcurrent', status: 'resolved', resolvedBy: 'J. Novák' },
+    { time: 'Today 08:45', machine: 'KUKA KR 60-3', issue: 'Welding arc misalignment', status: 'in-progress', resolvedBy: 'M. Horváth' },
+    { time: 'Yesterday', machine: 'Zünd G3 Cutting', issue: 'Belt tension warning', status: 'resolved', resolvedBy: 'P. Kováč' },
+    { time: 'Yesterday', machine: 'Conveyor L4', issue: 'Sensor calibration drift', status: 'open', resolvedBy: '—' },
+    { time: '2 days ago', machine: 'KUKA KR 60-3', issue: 'TCP calibration alert', status: 'resolved', resolvedBy: 'M. Horváth' },
+  ];
+
+  return React.createElement('div', { style: { background: '#fff', border: '1px solid #E4E7EB', borderRadius: 12, overflow: 'hidden' } },
+    React.createElement('div', { style: { padding: '14px 18px', borderBottom: '1px solid #E8ECF0', fontWeight: 700, fontSize: 14, color: '#1A2433' } }, 'Recent Incidents'),
+    React.createElement('table', { style: { width: '100%', borderCollapse: 'collapse', fontSize: 13 } },
+      React.createElement('thead', null,
+        React.createElement('tr', { style: { background: '#F7F9FB' } },
+          ['Time', 'Machine', 'Issue', 'Status', 'Resolved By'].map(h =>
+            React.createElement('th', { key: h, style: { padding: '8px 14px', textAlign: 'left', color: '#8B97A3', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }, onClick: () => setSortBy(h.toLowerCase()) }, h)
+          )
+        )
+      ),
+      React.createElement('tbody', null,
+        rows.map((r, i) => React.createElement('tr', {
+          key: i,
+          onClick: () => onRowClick && onRowClick(r),
+          style: { borderTop: '1px solid #F0F2F4', cursor: 'pointer' },
+          onMouseEnter: e => e.currentTarget.style.background = '#F7F9FB',
+          onMouseLeave: e => e.currentTarget.style.background = '#fff',
+        },
+          React.createElement('td', { style: { padding: '10px 14px', color: '#6B8EAE', fontSize: 12 } }, r.time),
+          React.createElement('td', { style: { padding: '10px 14px', fontWeight: 500, color: '#1A2433' } }, r.machine),
+          React.createElement('td', { style: { padding: '10px 14px', color: '#555' } }, r.issue),
+          React.createElement('td', { style: { padding: '10px 14px' } },
+            React.createElement('span', { style: { color: statusColors[r.status], fontWeight: 600, fontSize: 12 } }, statusLabels[r.status] || r.status)
+          ),
+          React.createElement('td', { style: { padding: '10px 14px', color: '#6B8EAE' } }, r.resolvedBy)
+        ))
+      )
+    )
+  );
+}
+
+function AlertsPanel() {
+  const { addToast } = useKobi();
+  const [dismissed, setDismissed] = useState([]);
+  const { predictiveAlerts } = window.KobiData;
+  const visible = predictiveAlerts.filter(a => !dismissed.includes(a.id));
+
+  return React.createElement('div', { style: { background: '#fff', border: '1px solid #E4E7EB', borderRadius: 12, overflow: 'hidden' } },
+    React.createElement('div', { style: { padding: '14px 18px', borderBottom: '1px solid #E8ECF0', fontWeight: 700, fontSize: 14, color: '#1A2433' } }, '⚡ Predictive Alerts'),
+    React.createElement('div', { style: { padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 10 } },
+      visible.length === 0
+        ? React.createElement('div', { style: { color: '#8B97A3', fontSize: 13, padding: 8, textAlign: 'center' } }, 'No active alerts')
+        : visible.map(alert => React.createElement('div', { key: alert.id, style: { background: alert.type === 'warning' ? '#FFF8E1' : '#E3F2FD', border: `1px solid ${alert.type === 'warning' ? '#FFD54F' : '#90CAF9'}`, borderRadius: 8, padding: '10px 12px' } },
+            React.createElement('div', { style: { display: 'flex', gap: 6, marginBottom: 4, alignItems: 'flex-start' } },
+              React.createElement('span', { style: { fontSize: 14, flexShrink: 0 } }, alert.type === 'warning' ? '⚠️' : 'ℹ️'),
+              React.createElement('div', null,
+                React.createElement('div', { style: { fontWeight: 700, fontSize: 12, color: '#1A2433', marginBottom: 2 } }, alert.machine),
+                React.createElement('div', { style: { fontSize: 12, color: '#555', lineHeight: 1.4 } }, alert.message)
+              )
+            ),
+            React.createElement('div', { style: { display: 'flex', gap: 6, marginTop: 6 } },
+              React.createElement('button', { onClick: () => setDismissed(d => [...d, alert.id]), style: { padding: '3px 10px', border: '1px solid #C5D0DB', borderRadius: 5, background: '#fff', cursor: 'pointer', fontSize: 11, color: '#555' } }, 'Dismiss'),
+              React.createElement('button', { onClick: () => addToast('Opening incident form…', 'info'), style: { padding: '3px 10px', border: 'none', borderRadius: 5, background: '#1E3A5F', cursor: 'pointer', fontSize: 11, color: '#fff', fontWeight: 600 } }, 'Create incident')
+            )
+          ))
+    )
+  );
+}
+
+function DashboardView() {
+  const { openIncidentCount, t } = useKobi();
+  const { dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine } = window.KobiData;
+  const [pulseIndex, setPulseIndex] = useState(-1);
+  const pulseTimer = useRef(null);
+
+  useEffect(() => {
+    pulseTimer.current = setInterval(() => {
+      setPulseIndex(Math.floor(Math.random() * 4));
+      setTimeout(() => setPulseIndex(-1), 900);
+    }, 30000);
+    return () => clearInterval(pulseTimer.current);
+  }, []);
+
+  const kpis = [
+    { key: 0, label: t('mttr'), value: dashboardKPIs.mttr.value, unit: 'min', trend: dashboardKPIs.mttr.trend, trendDir: 'down', sparkData: mttrData, sparkKey: 'mttr', color: '#1E3A5F' },
+    { key: 1, label: t('openIncidents'), value: openIncidentCount, trend: 2, trendDir: 'up', color: '#F44336' },
+    { key: 2, label: t('aiQueries'), value: dashboardKPIs.aiQueriesToday.value, trend: dashboardKPIs.aiQueriesToday.trend, trendDir: 'up', sparkData: aiQueryData.slice(-12), sparkKey: 'queries', color: '#4CAF50' },
+    { key: 3, label: t('knowledgNotes'), value: dashboardKPIs.knowledgeNotes.value, trend: dashboardKPIs.knowledgeNotes.trend, trendDir: 'up', color: '#9C27B0' },
+  ];
+
+  return React.createElement('div', { style: { padding: '20px 20px', overflowY: 'auto', height: '100%', boxSizing: 'border-box' } },
+    // Header
+    React.createElement('div', { style: { marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontWeight: 800, fontSize: 18, color: '#1A2433' } }, t('dashboard')),
+        React.createElement('div', { style: { fontSize: 12, color: '#8B97A3', marginTop: 2 } }, 'Bratislava Plant · rolling 30 days')
+      ),
+      React.createElement('div', { style: { display: 'flex', gap: 8, alignItems: 'center' } },
+        React.createElement('span', { style: { background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 20, padding: '4px 12px', fontSize: 12, color: '#1E3A5F', fontWeight: 500 } }, 'Factory: Bratislava Plant ▾'),
+        React.createElement('div', { style: { width: 8, height: 8, borderRadius: '50%', background: '#4CAF50', animation: 'pulse 2s infinite' } })
+      )
+    ),
+
+    // KPI cards
+    React.createElement('div', { style: { display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' } },
+      kpis.map(kpi => React.createElement(KpiCard, { key: kpi.key, ...kpi, pulse: pulseIndex === kpi.key }))
+    ),
+
+    // Charts row 1
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginBottom: 14 } },
+      React.createElement('div', { style: { background: '#fff', border: '1px solid #E4E7EB', borderRadius: 12, padding: '16px 18px' } },
+        React.createElement('div', { style: { fontWeight: 700, fontSize: 13, color: '#1A2433', marginBottom: 14 } }, 'Incidents by Machine'),
+        React.createElement(HorizontalBar, { data: incidentsByMachine, maxVal: 12, color: '#1E3A5F' })
+      ),
+      React.createElement('div', { style: { background: '#fff', border: '1px solid #E4E7EB', borderRadius: 12, padding: '16px 18px' } },
+        React.createElement('div', { style: { fontWeight: 700, fontSize: 13, color: '#1A2433', marginBottom: 4 } }, 'AI Query Volume — last 30 days'),
+        React.createElement('div', { style: { fontSize: 11, color: '#9BA8B4', marginBottom: 8 } }, '↑ After Zünd docs ingested (day 20)'),
+        React.createElement(LineChart, { data: aiQueryData, xKey: 'day', yKey: 'queries', color: '#4CAF50', height: 90, annotation: { idx: 19, label: 'Zünd docs' } })
+      )
+    ),
+
+    // Charts row 2
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginBottom: 20 } },
+      React.createElement('div', { style: { background: '#fff', border: '1px solid #E4E7EB', borderRadius: 12, padding: '16px 18px' } },
+        React.createElement('div', { style: { fontWeight: 700, fontSize: 13, color: '#1A2433', marginBottom: 4 } }, 'MTTR Trend — last 12 weeks'),
+        React.createElement('div', { style: { fontSize: 11, color: '#4CAF50', marginBottom: 8 } }, '▼ 12% since KobiAI deployment (W7)'),
+        React.createElement(LineChart, { data: mttrData, xKey: 'week', yKey: 'mttr', color: '#1E3A5F', height: 90, annotation: { idx: 6, label: 'KobiAI' } })
+      ),
+      React.createElement('div', { style: { background: '#fff', border: '1px solid #E4E7EB', borderRadius: 12, padding: '16px 18px' } },
+        React.createElement('div', { style: { fontWeight: 700, fontSize: 13, color: '#1A2433', marginBottom: 4 } }, 'Knowledge Base Growth'),
+        React.createElement('div', { style: { fontSize: 11, color: '#9BA8B4', marginBottom: 8 } }, '12,340 chunks indexed across all machines'),
+        React.createElement(LineChart, { data: knowledgeData, xKey: 'week', yKey: 'chunks', color: '#9C27B0', height: 90 })
+      )
+    ),
+
+    // Incidents table + alerts
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 320px', gap: 14, alignItems: 'start' } },
+      React.createElement(IncidentsTable, { incidents: [] }),
+      React.createElement(AlertsPanel)
+    )
+  );
+}
+
+Object.assign(window, { DashboardView });
+
+
+// KobiAI Right Panel — Machine Card, Logbook, Knowledge Panel
+
+
+function MachineCardPanel({ machineId, onClose }) {
+  const { setActiveChannel, addToast } = useKobi();
+  const machine = window.KobiData.machines[machineId];
+  if (!machine) return null;
+
+  const statusColor = machine.status === 'online' ? '#4CAF50' : '#FF9800';
+  const statusLabel = machine.status === 'online' ? '🟢 Online' : '🟡 Maintenance';
+
+  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
+    React.createElement('div', { style: { padding: '14px 16px', borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+      React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433' } }, 'Machine Card'),
+      React.createElement('button', { onClick: onClose, style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 20 } }, '×')
+    ),
+    React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: 16 } },
+      // Machine image placeholder
+      React.createElement('div', { style: { height: 120, background: `linear-gradient(135deg, ${machine.color}22, ${machine.color}44)`, border: `1px solid ${machine.color}33`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, position: 'relative' } },
+        React.createElement('div', { style: { textAlign: 'center' } },
+          React.createElement('div', { style: { fontSize: 40 } }, machineId === 'siemens' ? '⚙️' : machineId === 'kuka' ? '🤖' : '✂️'),
+          React.createElement('div', { style: { fontSize: 10, color: machine.color, fontFamily: 'monospace', marginTop: 4, opacity: 0.7 } }, `// ${machine.type.toUpperCase()} //`)
+        ),
+        React.createElement('div', { style: { position: 'absolute', top: 10, right: 10, fontSize: 12, fontWeight: 600, color: statusColor } }, statusLabel)
+      ),
+
+      React.createElement('div', { style: { fontWeight: 800, fontSize: 16, color: '#1A2433', marginBottom: 4 } }, machine.name),
+      React.createElement('div', { style: { fontSize: 12, color: '#8B97A3', marginBottom: 16 } }, machine.type),
+
+      // Details grid
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px', marginBottom: 16 } },
+        [
+          ['OEM', machine.oem],
+          ['Location', machine.location],
+          ['Commissioned', machine.commissioned],
+          ['Last Incident', machine.lastIncident],
+        ].map(([k, v]) => React.createElement('div', { key: k },
+          React.createElement('div', { style: { fontSize: 10, color: '#9BA8B4', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 } }, k),
+          React.createElement('div', { style: { fontSize: 13, color: '#1A2433', fontWeight: 500 } }, v)
+        ))
+      ),
+
+      // Knowledge stats
+      React.createElement('div', { style: { background: '#F0F5FA', border: '1px solid #C5D9EE', borderRadius: 10, padding: '12px 14px', marginBottom: 16 } },
+        React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: '#1E3A5F', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 } }, '🧠 Knowledge Base'),
+        React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 } },
+          [
+            ['Docs', machine.docsIndexed],
+            ['Chunks', machine.chunksIndexed.toLocaleString()],
+            ['Diagrams', machine.diagramsExtracted],
+          ].map(([k, v]) => React.createElement('div', { key: k, style: { textAlign: 'center' } },
+            React.createElement('div', { style: { fontWeight: 800, fontSize: 18, color: '#1E3A5F' } }, v),
+            React.createElement('div', { style: { fontSize: 10, color: '#6B8EAE' } }, k)
+          ))
+        )
+      ),
+
+      // Actions
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+        React.createElement('button', {
+          onClick: () => { setActiveChannel('incidents'); onClose(); },
+          style: { width: '100%', padding: '9px 14px', background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#1E3A5F', textAlign: 'left' }
+        }, '🚨 View all incidents'),
+        React.createElement('button', {
+          onClick: () => { setActiveChannel('docs-drop'); onClose(); },
+          style: { width: '100%', padding: '9px 14px', background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#1E3A5F', textAlign: 'left' }
+        }, '📥 Upload docs')
+      )
+    )
+  );
+}
+
+function LogbookPanel({ onClose }) {
+  const { incidents } = window.KobiData;
+  const statusColors = { resolved: '#4CAF50', 'in-progress': '#FF9800', open: '#F44336', 'awaiting-approval': '#FF9800' };
+  const sevColors = { critical: '#F44336', warning: '#FF9800', info: '#2196F3' };
+
+  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
+    React.createElement('div', { style: { padding: '14px 16px', borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+      React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433' } }, '📋 Maintenance Logbook'),
+      React.createElement('button', { onClick: onClose, style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 20 } }, '×')
+    ),
+    React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: 12 } },
+      incidents.map(inc => React.createElement('div', {
+        key: inc.id,
+        style: { background: '#fff', border: `1px solid ${sevColors[inc.severity] || '#E4E7EB'}`, borderLeft: `3px solid ${sevColors[inc.severity] || '#E4E7EB'}`, borderRadius: 8, padding: '10px 12px', marginBottom: 8, cursor: 'pointer' },
+        onMouseEnter: e => e.currentTarget.style.background = '#F7F9FB',
+        onMouseLeave: e => e.currentTarget.style.background = '#fff',
+      },
+        React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: 3 } },
+          React.createElement('span', { style: { fontWeight: 700, fontSize: 12, color: '#1E3A5F' } }, inc.id),
+          React.createElement('span', { style: { fontSize: 11, color: statusColors[inc.status], fontWeight: 600 } }, inc.status)
+        ),
+        React.createElement('div', { style: { fontSize: 13, color: '#1A2433', fontWeight: 500, marginBottom: 2 } }, inc.issue),
+        React.createElement('div', { style: { fontSize: 11, color: '#8B97A3' } }, `${inc.machine} · ${inc.opened}`)
+      ))
+    )
+  );
+}
+
+function KnowledgePanel({ onClose }) {
+  const [activeTab, setActiveTab] = useState('docs');
+  const { docs: docsList } = window.KobiData || { docs: [] };
+
+  const indexedDocs = [
+    { name: 'Siemens SINAMICS S120 Fault Manual', machine: 'Siemens S7-1500', pages: 247, date: '12 Mar 2026' },
+    { name: 'KUKA System Software KSS 8.6', machine: 'KUKA KR 60-3', pages: 312, date: '5 Feb 2026' },
+    { name: 'Zünd G3 Operator Manual EN', machine: 'Zünd G3', pages: 412, date: '2 days ago' },
+    { name: 'Machine Config Sheet — CNC Line 3', machine: 'Siemens S7-1500', pages: 14, date: '8 Jan 2026' },
+    { name: 'Plant Safety SOP-042', machine: 'All', pages: 38, date: '15 Jan 2026' },
+    { name: 'KUKA KR60 System Manual v4', machine: 'KUKA KR 60-3', pages: 461, date: '3 days ago' },
+  ];
+
+  const myNotes = [
+    { text: 'Re-tension timing belt to 4.5N after replacement (factory spec 4.0N slips)', machine: 'Siemens S7-1500', date: 'Today', by: 'J. Novák' },
+    { text: 'Zone 3 vacuum ports collect debris 3× faster than other zones — add to pre-shift check', machine: 'Zünd G3', date: 'Yesterday', by: 'P. Kováč' },
+    { text: 'TCP calibration mandatory after every welding tip change (adds 4 min)', machine: 'KUKA KR 60-3', date: '5 Feb 2026', by: 'M. Horváth' },
+  ];
+
+  const gaps = [
+    { text: 'Zünd G3 — electrical schema v2.3 not indexed', machine: 'Zünd G3' },
+    { text: 'KUKA KR 60 — firmware release notes v4.1 missing', machine: 'KUKA KR 60-3' },
+    { text: 'Siemens S7-1500 — motor replacement procedure not found', machine: 'Siemens S7-1500' },
+  ];
+
+  const tabs = [{ id: 'docs', label: '📄 Indexed docs' }, { id: 'notes', label: '🧠 My notes' }, { id: 'gaps', label: '⚠️ Gaps' }];
+
+  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
+    React.createElement('div', { style: { padding: '14px 16px 0', borderBottom: '1px solid #E8ECF0' } },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 } },
+        React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433' } }, 'Manage Knowledge'),
+        React.createElement('button', { onClick: onClose, style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 20 } }, '×')
+      ),
+      React.createElement('div', { style: { display: 'flex', gap: 0 } },
+        tabs.map(tab => React.createElement('button', {
+          key: tab.id, onClick: () => setActiveTab(tab.id),
+          style: { padding: '6px 12px', background: 'none', border: 'none', borderBottom: activeTab === tab.id ? '2px solid #1E3A5F' : '2px solid transparent', color: activeTab === tab.id ? '#1E3A5F' : '#8B97A3', fontWeight: activeTab === tab.id ? 700 : 400, cursor: 'pointer', fontSize: 12, transition: 'all 0.15s', whiteSpace: 'nowrap' }
+        }, tab.label))
+      )
+    ),
+    React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: 12 } },
+      activeTab === 'docs' && indexedDocs.map((doc, i) => React.createElement('div', { key: i, style: { padding: '8px 10px', borderBottom: '1px solid #F0F2F4', display: 'flex', gap: 8 } },
+        React.createElement('span', { style: { fontSize: 16 } }, '📄'),
+        React.createElement('div', { style: { flex: 1 } },
+          React.createElement('div', { style: { fontSize: 13, color: '#1A2433', fontWeight: 500 } }, doc.name),
+          React.createElement('div', { style: { fontSize: 11, color: '#8B97A3', marginTop: 2 } }, `${doc.machine} · ${doc.pages} pages · ${doc.date}`)
+        )
+      )),
+      activeTab === 'notes' && myNotes.map((note, i) => React.createElement('div', { key: i, style: { background: '#FFFDF0', border: '1px solid #FFE57F', borderRadius: 8, padding: '10px 12px', marginBottom: 8 } },
+        React.createElement('div', { style: { fontSize: 13, color: '#1A2433', marginBottom: 4, lineHeight: 1.5 } }, note.text),
+        React.createElement('div', { style: { fontSize: 11, color: '#8B97A3' } }, `${note.machine} · ${note.by} · ${note.date}`)
+      )),
+      activeTab === 'gaps' && gaps.map((gap, i) => React.createElement('div', { key: i, style: { background: '#FFF3E0', border: '1px solid #FFB74D', borderRadius: 8, padding: '10px 12px', marginBottom: 8 } },
+        React.createElement('div', { style: { fontSize: 13, color: '#1A2433', marginBottom: 6 } }, gap.text),
+        React.createElement('div', { style: { display: 'flex', gap: 6 } },
+          React.createElement('button', { style: { padding: '3px 10px', background: '#1E3A5F', border: 'none', borderRadius: 5, cursor: 'pointer', fontSize: 11, color: '#fff', fontWeight: 600 } }, 'Upload to #docs-drop')
+        )
+      ))
+    )
+  );
+}
+
+function RightPanel() {
+  const { rightPanel, setRightPanel, activeChannel } = useKobi();
+
+  const isDmKobi = activeChannel === 'dm-kobi';
+  const show = rightPanel || isDmKobi;
+  if (!show) return null;
+
+  const close = () => setRightPanel(null);
+  let content;
+
+  if (isDmKobi && !rightPanel) {
+    content = React.createElement(KnowledgePanel, { onClose: close });
+  } else if (rightPanel?.type === 'machine-card') {
+    content = React.createElement(MachineCardPanel, { machineId: rightPanel.machineId, onClose: close });
+  } else if (rightPanel?.type === 'logbook') {
+    content = React.createElement(LogbookPanel, { onClose: close });
+  } else if (rightPanel?.type === 'knowledge') {
+    content = React.createElement(KnowledgePanel, { onClose: close });
+  } else {
+    return null;
+  }
+
+  return React.createElement('div', {
+    style: { width: 320, flexShrink: 0, borderLeft: '1px solid #E8ECF0', background: '#FAFBFC', display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+  }, content);
+}
+
+Object.assign(window, { RightPanel });
+
+
+// KobiAI Chat Panel — message list, composer, bot responses
+
+
+// Render markdown-lite: bold, italic, code, lists, line breaks
+function MarkdownText({ text }) {
+  if (!text) return null;
+  const lines = text.split('\n');
+  return React.createElement('div', { style: { lineHeight: 1.6 } },
+    lines.map((line, i) => {
+      // Heading
+      if (line.startsWith('**') && line.endsWith('**') && !line.slice(2,-2).includes('**')) {
+        return React.createElement('div', { key: i, style: { fontWeight: 700, marginBottom: 4, marginTop: i > 0 ? 8 : 0 } }, line.slice(2,-2));
+      }
+      // Empty line
+      if (line.trim() === '') return React.createElement('div', { key: i, style: { height: 6 } });
+      // List item
+      if (line.match(/^\d+\./)) {
+        const content = line.replace(/^\d+\.\s*/, '');
+        return React.createElement('div', { key: i, style: { display: 'flex', gap: 8, marginBottom: 2 } },
+          React.createElement('span', { style: { color: '#4CAF50', fontWeight: 700, minWidth: 16 } }, line.match(/^(\d+)/)[1] + '.'),
+          React.createElement('span', null, renderInline(content))
+        );
+      }
+      if (line.startsWith('- ')) {
+        return React.createElement('div', { key: i, style: { display: 'flex', gap: 8, marginBottom: 2 } },
+          React.createElement('span', { style: { color: '#4CAF50', minWidth: 12 } }, '•'),
+          React.createElement('span', null, renderInline(line.slice(2)))
+        );
+      }
+      // Table row
+      if (line.startsWith('|') && line.endsWith('|')) {
+        if (line.replace(/\|/g,'').trim().match(/^[-\s]+$/)) return null;
+        const cells = line.split('|').filter((_,j,a) => j > 0 && j < a.length-1);
+        const isHeader = lines[i+1] && lines[i+1].replace(/\|/g,'').trim().match(/^[-\s]+$/);
+        return React.createElement('div', { key: i, style: { display: 'flex', gap: 0, background: isHeader ? '#E8F0F8' : (i%2===0?'#F8FAFB':'#fff'), borderRadius: 4 } },
+          cells.map((c, j) => React.createElement('div', { key: j, style: { flex: 1, padding: '3px 8px', fontSize: 12, fontWeight: isHeader ? 700 : 400, borderRight: j < cells.length-1 ? '1px solid #E4E7EB' : 'none' } }, renderInline(c.trim())))
+        );
+      }
+      return React.createElement('div', { key: i }, renderInline(line));
+    })
+  );
+}
+
+function renderInline(text) {
+  // Bold + italic inline
+  const parts = [];
+  let remaining = text;
+  let key = 0;
+  while (remaining.length > 0) {
+    const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+    const codeMatch = remaining.match(/`(.+?)`/);
+    const italicMatch = remaining.match(/_(.+?)_/);
+    const matches = [boldMatch, codeMatch, italicMatch].filter(Boolean).sort((a,b) => a.index - b.index);
+    if (matches.length === 0) { parts.push(remaining); break; }
+    const first = matches[0];
+    if (first.index > 0) parts.push(remaining.slice(0, first.index));
+    if (first === boldMatch) parts.push(React.createElement('strong', { key: key++ }, first[1]));
+    else if (first === codeMatch) parts.push(React.createElement('code', { key: key++, style: { background: '#E8F0F8', padding: '1px 4px', borderRadius: 3, fontFamily: 'monospace', fontSize: '0.9em' } }, first[1]));
+    else parts.push(React.createElement('em', { key: key++ }, first[1]));
+    remaining = remaining.slice(first.index + first[0].length);
+  }
+  return parts;
+}
+
+function Avatar({ user, size = 32 }) {
+  return React.createElement('div', {
+    style: { width: size, height: size, borderRadius: '50%', background: user?.color || '#555', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.38, color: '#fff', fontWeight: 700, flexShrink: 0 }
+  }, user?.initials || '?');
+}
+
+function SourcesCard({ sources, visible }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!visible || !sources?.length) return null;
+  return React.createElement('div', {
+    style: { marginTop: 8, background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 8, overflow: 'hidden', fontSize: 12 }
+  },
+    React.createElement('button', {
+      onClick: () => setExpanded(e => !e),
+      style: { width: '100%', padding: '6px 10px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#1E3A5F', fontWeight: 600 }
+    },
+      React.createElement('span', null, '📄'),
+      React.createElement('span', null, `Sources (${sources.length})`),
+      React.createElement('span', { style: { marginLeft: 'auto', color: '#6B8EAE' } }, expanded ? '▲' : '▼')
+    ),
+    expanded && React.createElement('div', { style: { padding: '4px 10px 8px', borderTop: '1px solid #C5D9EE' } },
+      sources.map((s, i) => React.createElement('div', { key: i, style: { display: 'flex', alignItems: 'flex-start', gap: 6, padding: '3px 0', borderBottom: i < sources.length - 1 ? '1px solid #DDE8F4' : 'none' } },
+        React.createElement('span', { style: { fontSize: 13 } }, s.isNote ? '🧠' : '📄'),
+        React.createElement('div', null,
+          React.createElement('div', { style: { color: '#1E3A5F', fontWeight: 500 } }, s.title),
+          (s.ref || s.date) && React.createElement('div', { style: { color: '#6B8EAE' } }, [s.ref, s.date].filter(Boolean).join(' · '))
+        )
+      ))
+    )
+  );
+}
+
+function DiagramPreview({ diagram }) {
+  if (!diagram) return null;
+  return React.createElement('div', {
+    style: { marginTop: 8, background: '#E8EDF3', border: '1px solid #C5D0DB', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', maxWidth: 340 }
+  },
+    React.createElement('div', { style: { width: 60, height: 40, background: 'repeating-linear-gradient(45deg, #C5D0DB, #C5D0DB 2px, #E8EDF3 2px, #E8EDF3 8px)', borderRadius: 4 } }),
+    React.createElement('div', { style: { fontSize: 12, color: '#1E3A5F', fontWeight: 500 } }, diagram.label)
+  );
+}
+
+function BotMessage({ msg, sourcesVisible }) {
+  return React.createElement('div', { style: { background: '#F0F5FA', borderRadius: 8, padding: '10px 14px', maxWidth: '100%' } },
+    React.createElement(MarkdownText, { text: msg.markdown || msg.text }),
+    React.createElement(DiagramPreview, { diagram: msg.diagram }),
+    React.createElement(SourcesCard, { sources: msg.sources, visible: sourcesVisible })
+  );
+}
+
+function IncidentCard({ incident: inc }) {
+  const statusColors = { resolved: '#4CAF50', 'in-progress': '#FF9800', open: '#F44336', 'awaiting-approval': '#FF9800' };
+  const statusLabels = { resolved: '🟢 Resolved', 'in-progress': '🟡 In Progress', open: '🔴 Open', 'awaiting-approval': '🟠 Awaiting Approval' };
+  const sevColors = { critical: '#F44336', warning: '#FF9800', info: '#2196F3' };
+  return React.createElement('div', {
+    style: { border: `1px solid ${sevColors[inc.severity] || '#E4E7EB'}`, borderLeft: `4px solid ${sevColors[inc.severity] || '#E4E7EB'}`, borderRadius: 8, padding: '10px 14px', background: '#fff', marginBottom: 4 }
+  },
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 } },
+      React.createElement('span', { style: { fontWeight: 700, color: '#1E3A5F', fontSize: 13 } }, `🚨 ${inc.id}`),
+      React.createElement('span', { style: { color: statusColors[inc.status], fontSize: 12, fontWeight: 600 } }, statusLabels[inc.status] || inc.status),
+      React.createElement('span', { style: { marginLeft: 'auto', color: '#6B8EAE', fontSize: 11 } }, inc.opened)
+    ),
+    React.createElement('div', { style: { fontSize: 13, color: '#333', marginBottom: 4 } },
+      React.createElement('strong', null, inc.machine), ' · ', inc.issue
+    ),
+    inc.notes && React.createElement('div', { style: { fontSize: 12, color: '#555', fontStyle: 'italic', marginBottom: 4 } }, `"${inc.notes}"`),
+    React.createElement('div', { style: { display: 'flex', gap: 12, fontSize: 11, color: '#8B97A3' } },
+      React.createElement('span', null, `Opened by @${inc.openedBy}`),
+      inc.resolvedBy && React.createElement('span', null, `· Resolved by @${inc.resolvedBy}`),
+      inc.mttr && React.createElement('span', null, `· MTTR: ${inc.mttr}`),
+      inc.parts?.length > 0 && React.createElement('span', null, `· Parts: ${inc.parts.join(', ')}`)
+    )
+  );
+}
+
+function IngestionCard({ file }) {
+  const [phase, setPhase] = useState(file.status === 'indexed' ? 'done' : 'parsing');
+  const [progress, setProgress] = useState(file.status === 'indexed' ? 100 : 0);
+
+  useEffect(() => {
+    if (file.status === 'indexed') return;
+    const t1 = setTimeout(() => {
+      let p = 0;
+      const iv = setInterval(() => {
+        p += 4;
+        setProgress(p);
+        if (p >= 100) { clearInterval(iv); setPhase('done'); }
+      }, 60);
+      return () => clearInterval(iv);
+    }, 300);
+    return () => clearTimeout(t1);
+  }, []);
+
+  return React.createElement('div', { style: { background: '#F0F8FF', border: '1px solid #C5D9EE', borderRadius: 8, padding: '10px 14px', maxWidth: 400 } },
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 } },
+      React.createElement('span', { style: { fontSize: 20 } }, '📄'),
+      React.createElement('div', null,
+        React.createElement('div', { style: { fontWeight: 600, fontSize: 13, color: '#1E3A5F' } }, file.name),
+        React.createElement('div', { style: { fontSize: 11, color: '#6B8EAE' } }, `${file.size} MB`)
+      ),
+      phase === 'done' && React.createElement('span', { style: { marginLeft: 'auto', color: '#4CAF50', fontWeight: 700, fontSize: 12 } }, '✅ Indexed')
+    ),
+    phase !== 'done' && React.createElement('div', null,
+      React.createElement('div', { style: { height: 4, background: '#C5D9EE', borderRadius: 2, overflow: 'hidden' } },
+        React.createElement('div', { style: { height: '100%', width: `${progress}%`, background: '#4CAF50', transition: 'width 0.06s linear', borderRadius: 2 } })
+      ),
+      React.createElement('div', { style: { fontSize: 11, color: '#6B8EAE', marginTop: 4 } }, 'Parsing…')
+    ),
+    phase === 'done' && React.createElement('div', { style: { fontSize: 12, color: '#555' } },
+      `${file.pages} pages · ${file.chunks} chunks · ${file.diagrams} diagrams extracted`,
+      React.createElement('br'),
+      React.createElement('span', { style: { color: '#4CAF50', fontWeight: 500 } }, `Tagged to: ${file.machine}`)
+    )
+  );
+}
+
+function Message({ msg, isGrouped }) {
+  const { users } = window.KobiData;
+  const user = users[msg.userId] || { initials: '?', color: '#999', name: msg.userId };
+  const [hovered, setHovered] = useState(false);
+  const [sourcesVisible, setSourcesVisible] = useState(true);
+
+  if (msg.isIncidentCard) return React.createElement('div', { style: { padding: '4px 16px' } }, React.createElement(IncidentCard, { incident: msg.incident }));
+
+  return React.createElement('div', {
+    onMouseEnter: () => setHovered(true),
+    onMouseLeave: () => setHovered(false),
+    style: { display: 'flex', gap: 10, padding: '3px 16px 3px', position: 'relative', background: hovered ? '#F7F9FB' : 'transparent', transition: 'background 0.1s' }
+  },
+    !isGrouped
+      ? React.createElement(Avatar, { user, size: 36 })
+      : React.createElement('div', { style: { width: 36, flexShrink: 0 } }),
+    React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+      !isGrouped && React.createElement('div', { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 2 } },
+        React.createElement('span', { style: { fontWeight: 700, color: '#1A2433', fontSize: 14 } }, user.name),
+        user.isBot && React.createElement('span', { style: { background: '#1E3A5F', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 3, padding: '1px 5px', letterSpacing: '0.04em' } }, 'APP'),
+        React.createElement('span', { style: { color: '#9BA8B4', fontSize: 11 } }, msg.time)
+      ),
+      msg.isBot
+        ? React.createElement(BotMessage, { msg, sourcesVisible })
+        : msg.isIngestion
+          ? React.createElement(IngestionCard, { file: msg.file })
+          : React.createElement('div', { style: { fontSize: 14, color: '#2A3544', lineHeight: 1.6 } },
+              msg.text && React.createElement(MarkdownText, { text: msg.text })
+            ),
+      msg.threadCount && React.createElement('button', {
+        style: { marginTop: 4, background: 'none', border: 'none', color: '#1E3A5F', fontSize: 12, cursor: 'pointer', padding: '2px 0', fontWeight: 500 }
+      }, `💬 ${msg.threadCount} reply`)
+    ),
+    hovered && React.createElement('div', {
+      style: { position: 'absolute', top: 0, right: 16, background: '#fff', border: '1px solid #E4E7EB', borderRadius: 6, display: 'flex', gap: 2, padding: '2px 4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 10 }
+    },
+      ['😊','↩️','🔖','⋯'].map(icon => React.createElement('button', {
+        key: icon,
+        style: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: '2px 4px', borderRadius: 4, color: '#555' }
+      }, icon))
+    )
+  );
+}
+
+function TypingIndicator() {
+  return React.createElement('div', { style: { display: 'flex', gap: 10, padding: '6px 16px', alignItems: 'center' } },
+    React.createElement('div', { style: { width: 36, height: 36, borderRadius: '50%', background: '#1E3A5F', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 14, flexShrink: 0 } }, 'K'),
+    React.createElement('div', { style: { background: '#F0F5FA', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 } },
+      React.createElement('div', { style: { display: 'flex', gap: 4 } },
+        [0,1,2].map(i => React.createElement('div', {
+          key: i,
+          style: { width: 7, height: 7, borderRadius: '50%', background: '#1E3A5F', opacity: 0.6, animation: `bounce 1s ease-in-out ${i*0.15}s infinite` }
+        }))
+      ),
+      React.createElement('span', { style: { fontSize: 12, color: '#6B8EAE' } }, 'KobiAI is thinking…')
+    )
+  );
+}
+
+function SlashPopover({ input, onSelect, onClose }) {
+  const commands = [
+    { cmd: '/ask', desc: 'Ask KobiAI a question', handler: true },
+    { cmd: '/add-note', desc: 'Add a maintenance note to the knowledge base', handler: true },
+    { cmd: '/incident', desc: 'Log a structured incident report', handler: true },
+    { cmd: '/search', desc: 'Search messages and documents', handler: true },
+    { cmd: '/assign', desc: 'Assign an incident to a technician', handler: false },
+    { cmd: '/playbook', desc: 'Run a maintenance playbook', handler: false },
+    { cmd: '/report', desc: 'Generate a weekly report', handler: false },
+  ];
+  const term = input.slice(1).toLowerCase();
+  const filtered = commands.filter(c => c.cmd.slice(1).startsWith(term));
+  if (!filtered.length) return null;
+  return React.createElement('div', {
+    style: { position: 'absolute', bottom: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #E4E7EB', borderRadius: 8, boxShadow: '0 -4px 16px rgba(0,0,0,0.12)', zIndex: 50, overflow: 'hidden', animation: 'slideUp 0.15s ease-out' }
+  },
+    React.createElement('div', { style: { padding: '6px 12px', fontSize: 11, fontWeight: 700, color: '#9BA8B4', borderBottom: '1px solid #F0F2F4', textTransform: 'uppercase', letterSpacing: '0.07em' } }, 'Commands'),
+    filtered.map((c, i) => React.createElement('button', {
+      key: c.cmd,
+      onClick: () => onSelect(c),
+      style: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', borderBottom: i < filtered.length-1 ? '1px solid #F7F9FB' : 'none' },
+      onMouseEnter: e => e.currentTarget.style.background = '#F0F5FA',
+      onMouseLeave: e => e.currentTarget.style.background = 'none',
+    },
+      React.createElement('span', { style: { fontWeight: 700, color: '#1E3A5F', fontSize: 13, minWidth: 80 } }, c.cmd),
+      React.createElement('span', { style: { color: '#6B8EAE', fontSize: 12 } }, c.desc),
+      !c.handler && React.createElement('span', { style: { marginLeft: 'auto', fontSize: 10, color: '#B0B8C4', fontStyle: 'italic' } }, 'coming soon')
+    ))
+  );
+}
+
+function VoiceWave({ active }) {
+  if (!active) return null;
+  return React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 3, padding: '0 6px' } },
+    React.createElement('div', { style: { width: 6, height: 6, borderRadius: '50%', background: '#F44336', animation: 'pulse 1s infinite' } }),
+    [14,20,12,18,10].map((h, i) => React.createElement('div', {
+      key: i,
+      style: { width: 3, height: h, borderRadius: 2, background: '#F44336', animation: `wave ${0.4 + i*0.1}s ease-in-out infinite alternate` }
+    }))
+  );
+}
+
+function DocsDropZone({ onDrop }) {
+  const [dragging, setDragging] = useState(false);
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) onDrop(files[0]);
+  };
+  return React.createElement('div', {
+    onDragOver: e => { e.preventDefault(); setDragging(true); },
+    onDragLeave: () => setDragging(false),
+    onDrop: handleDrop,
+    style: {
+      margin: '12px 16px', padding: 24, border: `2px dashed ${dragging ? '#4CAF50' : '#C5D0DB'}`,
+      borderRadius: 12, background: dragging ? '#F0FFF4' : '#F7F9FB',
+      textAlign: 'center', transition: 'all 0.2s', cursor: 'pointer',
+    }
+  },
+    React.createElement('div', { style: { fontSize: 28, marginBottom: 8 } }, '📥'),
+    React.createElement('div', { style: { fontWeight: 700, color: '#1E3A5F', marginBottom: 4 } }, 'Drop documents here to feed the AI'),
+    React.createElement('div', { style: { fontSize: 12, color: '#8B97A3' } }, 'PDFs · Schematics · Manuals · Images · Videos'),
+    React.createElement('div', { style: { fontSize: 11, color: '#4CAF50', marginTop: 6, fontWeight: 500 } }, '🔒 Files stay on-prem. Nothing leaves this factory.')
+  );
+}
+
+function ChatView() {
+  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, setRightPanel, t, role } = useKobi();
+  const { channels, users, machines, botResponses, voicePrefills } = window.KobiData;
+  const [input, setInput] = useState('');
+  const [typing, setTyping] = useState(false);
+  const [voiceActive, setVoiceActive] = useState(false);
+  const [showAddNote, setShowAddNote] = useState(false);
+  const [showIncident, setShowIncident] = useState(false);
+  const msgEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const channel = channels.find(ch => ch.slug === activeChannel);
+  const channelMessages = messages[activeChannel] || [];
+  const machine = channel?.machineId ? machines[channel.machineId] : null;
+
+  useEffect(() => {
+    if (msgEndRef.current && msgEndRef.current.parentElement) { const p = msgEndRef.current.parentElement; p.scrollTop = p.scrollHeight; }
+  }, [channelMessages.length, typing]);
+
+  const getBotResponse = useCallback((userText) => {
+    const slug = activeChannel;
+    const pool = botResponses[slug.replace('machine-','').split('-')[0]] || botResponses.siemens;
+    // Find matching response
+    const matched = pool.find(r => r.trigger.some(t => userText.toLowerCase().includes(t.toLowerCase())));
+    const response = matched || pool[0];
+    // If notes added, prepend a note source
+    const sources = notesAdded
+      ? [{ title: 'Your note (just now)', ref: 'Added by you · just now', date: '', isNote: true }, ...(response.sources || [])]
+      : (response.sources || []);
+    return { ...response, sources };
+  }, [activeChannel, notesAdded]);
+
+  const sendMessage = useCallback(async (text) => {
+    if (!text.trim()) return;
+    const userId = role === 'manager' ? 'martin' : 'jozef';
+    const userMsg = { id: Date.now() + 'u', userId, time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), text };
+    addMessage(activeChannel, userMsg);
+    setInput('');
+
+    const isKobiQuery = text.includes('@kobi') || text.startsWith('/ask');
+    if (!isKobiQuery) return;
+
+    setTyping(true);
+    const thinkTime = 1200 + Math.random() * 600;
+    await new Promise(r => setTimeout(r, thinkTime));
+    setTyping(false);
+
+    const resp = getBotResponse(text);
+    const fullText = resp.markdown || resp.text || '';
+    // Typewriter effect — reveal char by char
+    const botId = Date.now() + 'b';
+    addMessage(activeChannel, { id: botId, userId: 'kobi', time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), isBot: true, markdown: '', sources: [], diagram: resp.diagram, _typing: true });
+
+    let revealed = '';
+    const chars = fullText.split('');
+    for (let i = 0; i < chars.length; i++) {
+      await new Promise(r => setTimeout(r, 18));
+      revealed += chars[i];
+      // Update the last message's text
+      window._kobiTypingUpdate && window._kobiTypingUpdate(botId, revealed);
+    }
+    // Final with sources
+    window._kobiTypingUpdate && window._kobiTypingUpdate(botId, fullText, resp.sources);
+  }, [activeChannel, role, getBotResponse, addMessage]);
+
+  // Allow live update of bot message during typewriter
+  const [, forceUpdate] = useState(0);
+  useEffect(() => {
+    window._kobiTypingUpdate = (id, text, sources) => {
+      const msgs = window._kobiMessages || {};
+      msgs[id] = { text, sources };
+      window._kobiMessages = msgs;
+      forceUpdate(n => n + 1);
+    };
+    return () => { delete window._kobiTypingUpdate; };
+  }, []);
+
+  const getDisplayMessages = () => {
+    return channelMessages.map(msg => {
+      if (window._kobiMessages?.[msg.id]) {
+        return { ...msg, markdown: window._kobiMessages[msg.id].text, sources: window._kobiMessages[msg.id].sources || msg.sources };
+      }
+      return msg;
+    });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  };
+
+  const handleSend = () => {
+    const text = input.trim();
+    if (!text) return;
+    if (text === '/add-note') { setInput(''); setShowAddNote(true); return; }
+    if (text === '/incident') { setInput(''); setShowIncident(true); return; }
+    sendMessage(text);
+  };
+
+  const handleSlashSelect = (cmd) => {
+    if (!cmd.handler) { addToast('Coming in production release 🚀', 'info'); setInput(''); return; }
+    if (cmd.cmd === '/add-note') { setInput(''); setShowAddNote(true); return; }
+    if (cmd.cmd === '/incident') { setInput(''); setShowIncident(true); return; }
+    if (cmd.cmd === '/ask') { setInput('@kobi '); inputRef.current?.focus(); return; }
+    setInput(cmd.cmd + ' ');
+    inputRef.current?.focus();
+  };
+
+  const handleVoice = () => {
+    if (voiceActive) { setVoiceActive(false); return; }
+    setVoiceActive(true);
+    const prefill = voicePrefills[activeChannel] || '@kobi Tell me about recent issues on this machine.';
+    setTimeout(() => {
+      setVoiceActive(false);
+      let i = 0;
+      const iv = setInterval(() => {
+        setInput(prefill.slice(0, ++i));
+        if (i >= prefill.length) { clearInterval(iv); inputRef.current?.focus(); }
+      }, 30);
+    }, 2000);
+  };
+
+  const handleFileDrop = (file) => {
+    const sizeMB = (file.size / 1048576).toFixed(1);
+    const pages = Math.max(1, Math.round(parseFloat(sizeMB) * 25));
+    const chunks = pages * 4 + Math.round(Math.random() * 200);
+    const diagrams = Math.round(pages * 0.1);
+    const machineTarget = channel?.machineId ? `#machine-${channel.machineId}-kr-60` : '#machine-siemens-s7-1500';
+    addMessage('docs-drop', {
+      id: Date.now() + 'doc', userId: 'kobi',
+      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      isBot: true, isIngestion: true,
+      file: { name: file.name, size: sizeMB, pages, chunks, diagrams, machine: machineTarget, status: 'parsing' },
+    });
+    addToast('Document received. Indexing…', 'info');
+  };
+
+  const handleNoteSubmit = (note) => {
+    setShowAddNote(false);
+    setNotesAdded(true);
+    addToast(t('noteSaved'));
+    const userId = role === 'manager' ? 'martin' : 'jozef';
+    addMessage(activeChannel, {
+      id: Date.now() + 'note', userId: 'kobi',
+      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      isBot: true,
+      markdown: `🧠 **New knowledge added by @${userId}** — *just now*\n_"${note.text}"_\nCategory: ${note.category} · Severity: ${note.severity} · Indexed in 2.1s · Now searchable.`,
+      sources: [],
+    });
+  };
+
+  const handleIncidentSubmit = (inc) => {
+    setShowIncident(false);
+    setOpenIncidentCount(n => n + 1);
+    addToast(t('incidentSubmitted'));
+    const userId = role === 'manager' ? 'martin' : 'jozef';
+    const incId = `INC-2026-0${490 + Math.floor(Math.random()*10)}`;
+    const card = {
+      id: Date.now() + 'inc', userId: 'kobi',
+      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      isBot: true,
+      markdown: `🚨 **Incident ${incId} opened by @${userId}**\nMachine: ${machine?.name || 'Unknown'} · Severity: ${inc.severity} · Status: **Awaiting approval**\n_"${inc.description}"_\n*View in Logbook →*`,
+      sources: [],
+    };
+    addMessage(activeChannel, card);
+    addMessage('incidents', { id: Date.now() + 'incc', isIncidentCard: true, incident: { id: incId, machine: machine?.name || 'Machine', issue: inc.description.slice(0, 40) + '…', severity: inc.severity, status: 'awaiting-approval', openedBy: userId, opened: 'just now', notes: inc.description, resolution: inc.resolution } });
+  };
+
+  const isDashboard = activeChannel === 'dashboard';
+  const isDocsChannel = activeChannel === 'docs-drop';
+  const displayMessages = getDisplayMessages();
+  const showSlash = input.startsWith('/') && input.length >= 1;
+
+  return React.createElement('div', { style: { flex: 1, display: 'flex', flexDirection: 'column', background: '#fff', minWidth: 0, overflow: 'hidden' } },
+    // Channel header
+    React.createElement('div', {
+      style: { height: 50, borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, flexShrink: 0, background: '#fff' }
+    },
+      channel && React.createElement(React.Fragment, null,
+        React.createElement('span', { style: { fontSize: 16 } }, channel.icon),
+        React.createElement('div', null,
+          React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433' } }, channel.name),
+          React.createElement('div', { style: { fontSize: 11, color: '#9BA8B4' } }, `${channel.members} ${t('members')}${channel.purpose ? ' · ' + channel.purpose : ''}`)
+        ),
+        machine && React.createElement(React.Fragment, null,
+          React.createElement('div', { style: { marginLeft: 'auto', display: 'flex', gap: 6 } },
+            [
+              { label: t('machineCard'), fn: () => setRightPanel({ type: 'machine-card', machineId: channel.machineId }) },
+              { label: t('logbook'), fn: () => setRightPanel({ type: 'logbook' }) },
+              { label: t('askKobi'), fn: () => { setInput('@kobi '); inputRef.current?.focus(); } },
+            ].map(btn => React.createElement('button', {
+              key: btn.label,
+              onClick: btn.fn,
+              style: { padding: '4px 10px', background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 6, fontSize: 12, color: '#1E3A5F', cursor: 'pointer', fontWeight: 500 }
+            }, btn.label))
+          )
+        ),
+        !machine && channel.slug !== 'dashboard' && channel.slug !== 'docs-drop' && React.createElement('div', { style: { marginLeft: 'auto' } })
+      )
+    ),
+
+    // Messages area
+    React.createElement('div', {
+      style: { flex: 1, overflowY: 'auto', padding: '12px 0' }
+    },
+      isDashboard
+        ? React.createElement(window.DashboardView || 'div', null)
+        : React.createElement(React.Fragment, null,
+            isDocsChannel && React.createElement(DocsDropZone, { onDrop: handleFileDrop }),
+            displayMessages.map((msg, i) => {
+              const prev = displayMessages[i-1];
+              const isGrouped = prev && prev.userId === msg.userId && !msg.isIncidentCard && !prev.isIncidentCard;
+              return React.createElement(Message, { key: msg.id, msg, isGrouped });
+            }),
+            typing && React.createElement(TypingIndicator),
+            React.createElement('div', { ref: msgEndRef })
+          )
+    ),
+
+    // Composer
+    !isDashboard && React.createElement('div', {
+      style: { borderTop: '1px solid #E8ECF0', padding: '10px 16px 12px', background: '#fff', flexShrink: 0, position: 'relative' }
+    },
+      showSlash && React.createElement(SlashPopover, { input, onSelect: handleSlashSelect }),
+      React.createElement('div', {
+        style: { border: '1px solid #C5D0DB', borderRadius: 10, overflow: 'visible', background: '#FAFBFC' }
+      },
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', padding: '8px 12px', gap: 8 } },
+          React.createElement('button', { style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 20, padding: 0, lineHeight: 1 } }, '+'),
+          React.createElement(VoiceWave, { active: voiceActive }),
+          React.createElement('textarea', {
+            ref: inputRef,
+            value: input,
+            onChange: e => setInput(e.target.value),
+            onKeyDown: handleKeyDown,
+            placeholder: `${t('writeTo')} #${channel?.name || activeChannel}`,
+            rows: 1,
+            style: { flex: 1, background: 'none', border: 'none', outline: 'none', resize: 'none', fontSize: 14, color: '#1A2433', lineHeight: 1.5, maxHeight: 120, overflow: 'auto', fontFamily: 'Inter, system-ui, sans-serif' }
+          }),
+          React.createElement('button', {
+            onClick: handleVoice,
+            style: { background: voiceActive ? '#FEE' : 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '4px 6px', borderRadius: 6, color: voiceActive ? '#F44336' : '#8B97A3', transition: 'all 0.2s' }
+          }, '🎤'),
+          React.createElement('button', {
+            onClick: handleSend,
+            disabled: !input.trim(),
+            style: { background: input.trim() ? '#1E3A5F' : '#E8ECF0', border: 'none', borderRadius: 8, padding: '6px 14px', color: input.trim() ? '#fff' : '#9BA8B4', fontSize: 13, fontWeight: 600, cursor: input.trim() ? 'pointer' : 'default', transition: 'all 0.2s' }
+          }, '↑')
+        )
+      ),
+      React.createElement('div', { style: { fontSize: 11, color: '#B0B8C4', marginTop: 5, paddingLeft: 4 } }, 'Type / for commands · @kobi to ask the AI')
+    ),
+
+    // Dialogs
+    showAddNote && React.createElement(window.AddNoteDialog, { machine, onSave: handleNoteSubmit, onClose: () => setShowAddNote(false) }),
+    showIncident && React.createElement(window.IncidentDialog, { machine, onSubmit: handleIncidentSubmit, onClose: () => setShowIncident(false) })
+  );
+}
+
+Object.assign(window, { ChatView, Avatar, MarkdownText });
+
+
+// KobiAI App root — TopBar, Shell, Device frame
+
+
+function TopBar() {
+  const { role, setRole, language, setLanguage, deviceMode, setDeviceMode, showSearchOverlay, setShowSearchOverlay, setSidebarOpen, addToast, t } = useKobi();
+
+  const langs = ['EN','SK','CZ','DE','PL'];
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const [showRoleMenu, setShowRoleMenu] = useState(false);
+
+  return React.createElement('div', {
+    style: { height: 50, background: '#1B2733', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, flexShrink: 0, zIndex: 10, position: 'relative' }
+  },
+    // Hamburger (mobile only)
+    deviceMode === 'mobile' && React.createElement('button', {
+      onClick: () => setSidebarOpen(true),
+      style: { background: 'none', border: 'none', cursor: 'pointer', color: '#C5CCD4', fontSize: 18, padding: '4px 6px', borderRadius: 4 }
+    }, '☰'),
+
+    // Logo + team name
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 } },
+      React.createElement('div', { style: { width: 28, height: 28, background: '#1E3A5F', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13, position: 'relative' } },
+        'K',
+        React.createElement('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 7, height: 7, background: '#4CAF50', borderRadius: '50%', border: '2px solid #1B2733' } })
+      ),
+      deviceMode !== 'mobile' && React.createElement('span', { style: { color: '#fff', fontWeight: 700, fontSize: 13 } }, 'KobiAI · Bratislava Plant ▾')
+    ),
+
+    // Search bar
+    React.createElement('button', {
+      onClick: () => setShowSearchOverlay(true),
+      style: { flex: 1, maxWidth: 320, margin: '0 auto', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#8B97A3', fontSize: 13, textAlign: 'left' }
+    },
+      React.createElement('span', null, '🔍'),
+      React.createElement('span', null, t('search'))
+    ),
+
+    // Right controls
+    React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 } },
+      // Demo pill
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 4, background: '#2F3E50', borderRadius: 20, padding: '3px 10px', cursor: 'pointer' } },
+        React.createElement('span', { style: { width: 6, height: 6, borderRadius: '50%', background: '#FFD54F', display: 'inline-block' } }),
+        deviceMode !== 'mobile' && React.createElement('span', { style: { color: '#C5CCD4', fontSize: 11, fontWeight: 600 } }, 'DEMO')
+      ),
+
+      // Device preview (always visible so mobile preview can switch back to desktop/tablet)
+      React.createElement('div', { style: { display: 'flex', background: '#2F3E50', borderRadius: 6, overflow: 'hidden', flexShrink: 0 } },
+        [['desktop','🖥️'],['tablet','📱'],['mobile','📱']].map(([mode]) =>
+          React.createElement('button', {
+            key: mode, type: 'button', onClick: () => setDeviceMode(mode),
+            title: mode === 'desktop' ? 'Desktop preview' : mode === 'tablet' ? 'Tablet preview' : 'Mobile preview',
+            style: { padding: deviceMode === 'mobile' ? '4px 6px' : '4px 8px', background: deviceMode === mode ? '#1E3A5F' : 'none', border: 'none', cursor: 'pointer', fontSize: deviceMode === 'mobile' ? 12 : 13, color: deviceMode === mode ? '#fff' : '#8B97A3', transition: 'all 0.15s' }
+          }, mode === 'desktop' ? '🖥' : mode === 'tablet' ? '⬜' : '📱')
+        )
+      ),
+
+      // Language
+      React.createElement('div', { style: { position: 'relative' } },
+        React.createElement('button', {
+          onClick: () => { setShowLangMenu(l => !l); setShowRoleMenu(false); },
+          style: { background: '#2F3E50', border: 'none', borderRadius: 6, padding: '4px 9px', cursor: 'pointer', color: '#C5CCD4', fontSize: 12, fontWeight: 700 }
+        }, language.toUpperCase() + ' ▾'),
+        showLangMenu && React.createElement('div', {
+          style: { position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#1B2733', border: '1px solid #2F3E50', borderRadius: 8, overflow: 'hidden', zIndex: 100, minWidth: 80 }
+        },
+          langs.map(l => React.createElement('button', {
+            key: l, onClick: () => { setLanguage(l.toLowerCase()); setShowLangMenu(false); },
+            style: { display: 'block', width: '100%', padding: '7px 14px', background: language === l.toLowerCase() ? '#2F3E50' : 'none', border: 'none', cursor: 'pointer', color: '#C5CCD4', fontSize: 12, textAlign: 'left', fontWeight: language === l.toLowerCase() ? 700 : 400 }
+          }, l))
+        )
+      ),
+
+      // Role toggle
+      React.createElement('div', { style: { position: 'relative' } },
+        React.createElement('button', {
+          onClick: () => { setShowRoleMenu(r => !r); setShowLangMenu(false); },
+          style: { background: '#2F3E50', border: 'none', borderRadius: 6, padding: '4px 9px', cursor: 'pointer', color: '#C5CCD4', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }
+        },
+          React.createElement('span', { style: { width: 18, height: 18, borderRadius: '50%', background: role === 'manager' ? '#1E3A5F' : '#2E7D32', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', fontWeight: 800 } }, role === 'manager' ? 'MH' : 'JN'),
+          deviceMode !== 'mobile' && React.createElement('span', null, role === 'manager' ? 'Martin H.' : 'Jozef N.'),
+          '▾'
+        ),
+        showRoleMenu && React.createElement('div', {
+          style: { position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#1B2733', border: '1px solid #2F3E50', borderRadius: 8, overflow: 'hidden', zIndex: 100, minWidth: 200 }
+        },
+          React.createElement('div', { style: { padding: '8px 14px', fontSize: 10, color: '#6B8EAE', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' } }, t('viewAs')),
+          [
+            { r: 'manager', name: 'Martin Horváth', label: t('manager'), initials: 'MH', color: '#1E3A5F' },
+            { r: 'technician', name: 'Jozef Novák', label: t('technician'), initials: 'JN', color: '#2E7D32' },
+          ].map(opt => React.createElement('button', {
+            key: opt.r, onClick: () => { setRole(opt.r); setShowRoleMenu(false); },
+            style: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 14px', background: role === opt.r ? '#2F3E50' : 'none', border: 'none', cursor: 'pointer', color: '#C5CCD4', fontSize: 13, textAlign: 'left' }
+          },
+            React.createElement('div', { style: { width: 26, height: 26, borderRadius: '50%', background: opt.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff', fontWeight: 800 } }, opt.initials),
+            React.createElement('div', null,
+              React.createElement('div', { style: { fontWeight: 600 } }, opt.name),
+              React.createElement('div', { style: { fontSize: 11, color: '#8B97A3' } }, opt.label)
+            ),
+            role === opt.r && React.createElement('span', { style: { marginLeft: 'auto', color: '#4CAF50', fontSize: 14 } }, '✓')
+          ))
+        )
+      )
+    )
+  );
+}
+
+function Shell() {
+  const { deviceMode } = useKobi();
+  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' } },
+    React.createElement(TopBar),
+    React.createElement('div', { style: { flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' } },
+      // Sidebar (hidden on mobile — drawer instead)
+      deviceMode !== 'mobile' && React.createElement(Sidebar),
+      React.createElement(SidebarDrawer),
+      // Centre
+      React.createElement(ChatView),
+      // Right panel
+      React.createElement(RightPanel)
+    ),
+    React.createElement(OnPremModal),
+    React.createElement(SearchOverlay),
+    React.createElement(ToastContainer)
+  );
+}
+
+function DeviceFrame({ children, mode }) {
+  if (mode === 'desktop') {
+    return React.createElement('div', { style: { width: '100vw', height: '100vh', overflow: 'hidden' } }, children);
+  }
+  if (mode === 'tablet') {
+    return React.createElement('div', {
+      style: { display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh', background: '#0D1117' }
+    },
+      React.createElement('div', {
+        style: { width: 1024, height: '90vh', maxHeight: 768, border: '14px solid #2A2A2A', borderRadius: 20, overflow: 'hidden', boxShadow: '0 30px 80px rgba(0,0,0,0.5)', transition: 'all 0.25s ease', position: 'relative' }
+      }, children)
+    );
+  }
+  // mobile
+  return React.createElement('div', {
+    style: { display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh', background: '#0D1117' }
+  },
+    React.createElement('div', {
+      style: { width: 390, height: '90vh', maxHeight: 844, border: '12px solid #1A1A1A', borderRadius: 44, overflow: 'hidden', boxShadow: '0 30px 80px rgba(0,0,0,0.6)', position: 'relative', transition: 'all 0.25s ease' }
+    },
+      React.createElement('div', { style: { position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 120, height: 28, background: '#1A1A1A', borderRadius: '0 0 18px 18px', zIndex: 999 } }),
+      children
+    )
+  );
+}
+
+function App() {
+  const { deviceMode } = useKobi();
+  return React.createElement(DeviceFrame, { mode: deviceMode },
+    React.createElement(Shell)
+  );
+}
+
+const rootEl = document.getElementById('root');
+ReactDOM.createRoot(rootEl).render(
+  React.createElement(KobiProvider, null,
+    React.createElement(App)
+  )
+);
+</script>
+</body>
+</html>
