@@ -1305,7 +1305,7 @@ function AlertsPanel() {
 }
 
 function DashboardView() {
-  const { openIncidentCount, t } = useKobi();
+  const { openIncidentCount, t, setRightPanel, setActiveChannel } = useKobi();
   const { dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine } = window.KobiData;
   const [pulseIndex, setPulseIndex] = useState(-1);
   const pulseTimer = useRef(null);
@@ -1372,7 +1372,13 @@ function DashboardView() {
 
     // Incidents table + alerts
     React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 320px', gap: 14, alignItems: 'start' } },
-      React.createElement(IncidentsTable, { incidents: [] }),
+      React.createElement(IncidentsTable, {
+        incidents: [],
+        onRowClick: () => {
+          setActiveChannel('incidents');
+          setRightPanel({ type: 'logbook' });
+        },
+      }),
       React.createElement(AlertsPanel)
     )
   );
@@ -1880,7 +1886,7 @@ function DocsDropZone({ onDrop }) {
 }
 
 function ChatView() {
-  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, setRightPanel, t, role } = useKobi();
+  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, setRightPanel, setShowSearchOverlay, t, role } = useKobi();
   const { channels, users, machines, botResponses, voicePrefills } = window.KobiData;
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
@@ -1974,6 +1980,7 @@ function ChatView() {
     if (!text) return;
     if (text === '/add-note') { setInput(''); setShowAddNote(true); return; }
     if (text === '/incident') { setInput(''); setShowIncident(true); return; }
+    if (text === '/search' || text.startsWith('/search ')) { setInput(''); setShowSearchOverlay(true); return; }
     sendMessage(text);
   };
 
@@ -1981,6 +1988,7 @@ function ChatView() {
     if (!cmd.handler) { addToast('Coming in production release 🚀', 'info'); setInput(''); return; }
     if (cmd.cmd === '/add-note') { setInput(''); setShowAddNote(true); return; }
     if (cmd.cmd === '/incident') { setInput(''); setShowIncident(true); return; }
+    if (cmd.cmd === '/search') { setInput(''); setShowSearchOverlay(true); return; }
     if (cmd.cmd === '/ask') { setInput('@kobi '); inputRef.current?.focus(); return; }
     setInput(cmd.cmd + ' ');
     inputRef.current?.focus();

@@ -369,7 +369,7 @@ function Composer({ channelName, onSend, onVoice, voiceActive, input, setInput, 
 /* ─── Main ChatView ─── */
 function ChatView() {
   const I = window.Icons;
-  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, setRightPanel, t, role } = useKobi();
+  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, setRightPanel, setShowSearchOverlay, t, role } = useKobi();
   const { channels, users, machines, botResponses, voicePrefills } = window.KobiData;
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
@@ -441,6 +441,7 @@ function ChatView() {
     if (!text) return;
     if (text==='/add-note') { setInput(''); setShowAddNote(true); return; }
     if (text==='/incident') { setInput(''); setShowIncident(true); return; }
+    if (text==='/search' || text.startsWith('/search ')) { setInput(''); setShowSearchOverlay(true); return; }
     sendMessage(text);
   };
 
@@ -448,6 +449,7 @@ function ChatView() {
     if (!cmd.handler) { addToast('Coming in production 🚀','info'); setInput(''); return; }
     if (cmd.cmd==='/add-note') { setInput(''); setShowAddNote(true); return; }
     if (cmd.cmd==='/incident') { setInput(''); setShowIncident(true); return; }
+    if (cmd.cmd==='/search') { setInput(''); setShowSearchOverlay(true); return; }
     setInput(cmd.cmd==='/ ask'?'@kobi ':cmd.cmd+' ');
     inputRef.current?.focus();
   };

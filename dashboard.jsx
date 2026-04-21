@@ -116,6 +116,7 @@ function KpiCard({ label, value, unit, trend, trendDir, sparkData, sparkKey, pul
 /* ─── Incidents table ─── */
 
 function IncidentsTable() {
+  const { setRightPanel, setActiveChannel } = useKobi();
   const rows = [
     { time: 'Today 09:14', machine: 'Siemens S7-1500', issue: 'F-304 Overcurrent', status: 'resolved',           resolvedBy: 'J. Novák' },
     { time: 'Today 08:45', machine: 'KUKA KR 60-3',    issue: 'Welding arc misalignment', status: 'in-progress', resolvedBy: 'M. Horváth' },
@@ -146,7 +147,18 @@ function IncidentsTable() {
       React.createElement('tbody', null,
         rows.map((r, i) => {
           const st = statusStyle[r.status] || statusStyle.open;
-          return React.createElement('tr', { key: i, style: { borderTop: '1px solid #F0F2F4', cursor: 'pointer' },
+          return React.createElement('tr', {
+            key: i,
+            role: 'button',
+            tabIndex: 0,
+            onClick: () => {
+              setActiveChannel('incidents');
+              setRightPanel({ type: 'logbook' });
+            },
+            onKeyDown: (e) => {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveChannel('incidents'); setRightPanel({ type: 'logbook' }); }
+            },
+            style: { borderTop: '1px solid #F0F2F4', cursor: 'pointer' },
             onMouseEnter: e => e.currentTarget.style.background = '#F7F9FB',
             onMouseLeave: e => e.currentTarget.style.background = '#fff',
           },
