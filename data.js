@@ -50,6 +50,66 @@ const machines = {
   },
 };
 
+/** Plants / lines: same machine channels, different order & labels per site (demo). */
+const workspaces = [
+  {
+    id: 'bratislava',
+    nameKey: 'wsBratislava',
+    subKey: 'wsBratislavaSub',
+    machineIds: [
+      { machineId: 'siemens', slug: 'machine-siemens', shortKey: 'wsNavBrSi' },
+      { machineId: 'kuka', slug: 'machine-kuka', shortKey: 'wsNavBrKu' },
+      { machineId: 'zund', slug: 'machine-zund', shortKey: 'wsNavBrZu' },
+    ],
+  },
+  {
+    id: 'kosice',
+    nameKey: 'wsKosice',
+    subKey: 'wsKosiceSub',
+    machineIds: [
+      { machineId: 'kuka', slug: 'machine-kuka', shortKey: 'wsNavKoKu' },
+      { machineId: 'zund', slug: 'machine-zund', shortKey: 'wsNavKoZu' },
+      { machineId: 'siemens', slug: 'machine-siemens', shortKey: 'wsNavKoSi' },
+    ],
+  },
+  {
+    id: 'trnava',
+    nameKey: 'wsTrnava',
+    subKey: 'wsTrnavaSub',
+    machineIds: [
+      { machineId: 'zund', slug: 'machine-zund', shortKey: 'wsNavTrZu' },
+      { machineId: 'siemens', slug: 'machine-siemens', shortKey: 'wsNavTrSi' },
+      { machineId: 'kuka', slug: 'machine-kuka', shortKey: 'wsNavTrKu' },
+    ],
+  },
+];
+
+function getWorkspaceById(id) {
+  return workspaces.find((w) => w.id === id) || workspaces[0];
+}
+
+function getFirstMachineSlugForWorkspace(id) {
+  const w = getWorkspaceById(id);
+  return w?.machineIds?.[0]?.slug || 'machine-siemens';
+}
+
+function buildMachineNavEntries(workspaceId, t) {
+  const w = getWorkspaceById(workspaceId);
+  const I = window.Icons;
+  const iconByMachine = { siemens: I.gear, kuka: I.robot, zund: I.cutter };
+  return w.machineIds.map((row) => {
+    const mach = machines[row.machineId];
+    return {
+      slug: row.slug,
+      id: row.machineId,
+      name: mach ? mach.name : row.machineId,
+      short: t(row.shortKey),
+      icon: iconByMachine[row.machineId] || I.gear,
+      status: mach ? mach.status : 'online',
+    };
+  });
+}
+
 const now = Date.now();
 const minsAgo = (m) => new Date(now - m * 60000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 const hrsAgo  = (h) => new Date(now - h * 3600000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -59,6 +119,33 @@ const conversations = {
     { id: 'g1', userId: 'kobi', time: 'Yesterday 08:00', pinned: true, text: `Welcome to **KobiAI · Bratislava Plant**. I am your AI maintenance assistant. Ask me anything about your machines, log incidents with \`/incident\`, drop documents in \`#docs-drop\`, and open a machine channel to get context-aware help. Everything stays inside this factory.` },
     { id: 'g2', userId: 'tomas', time: 'Yesterday 13:22', text: 'Heads up — KR 60 had a welding arc misalignment yesterday, resolved. Thread in #incidents.' },
     { id: 'g3', userId: 'martin', time: 'Yesterday 16:05', text: 'New Zünd docs uploaded this morning. KobiAI finished indexing in 18 seconds. 👀', threadCount: 1, threadPreview: { userId: 'kobi', text: '📄 Received "Zünd_G3_Manual_EN.pdf" (412 pages). Parsed. 1,034 chunks indexed. 23 diagrams extracted. Available in #machine-zund-g3.' } },
+    { id: 'g5', userId: 'pavol', time: hrsAgo(2.5), text: '**Line cascade:** Zünd in Hall C is ~40 min behind — upstream CNC in #machine-siemens was in planned PM until 11:00. Welding in #machine-kuka is clear; cutting should catch up after lunch. Posting for MES line balance.' },
+    {
+      id: 'g6',
+      userId: 'jozef',
+      time: hrsAgo(2),
+      text: '@kobi We got a photo of an odd drive alarm from a customer site — not in the OEM list. Any triage before we open a formal ticket?',
+    },
+    {
+      id: 'g7',
+      userId: 'kobi',
+      time: hrsAgo(2),
+      isBot: true,
+      markdown: `**Unlisted SINAMICS-style alarm — triage (OEM first, then community)**
+
+I checked **OEM fault lists** for your build (no exact match). From **indexed non-official sources** (forums, DIY write-ups) — *ideas only*; always **verify** against OEM and your safety / CE process:
+
+1. **PracticalMachinist-style threads (fictional):** “false stall” when **encoder cable shield** is loose at X411 — re-seat and torquing per diagram.
+2. **hobby-CNC.org tech note (fictional):** moisture / re-seat **Control Unit** after long shutdown — *less likely* in your climate-controlled hall.
+
+**Official baseline:** SINAMICS S120 fault manual (use as the source of truth for work orders).`,
+      sources: [
+        { title: '[Community] “S120 false stall” — indexed thread (fictional)', ref: 'non-official', date: '' },
+        { title: '[DIY] Encoder cable checklist — hobby-CNC (fictional)', ref: 'non-official', date: '' },
+        { title: 'Siemens SINAMICS S120 Fault Manual', ref: 'OEM baseline', date: 'priority', openAs: 'pdf' },
+      ],
+    },
+    { id: 'g8', userId: 'martin', time: minsAgo(55), text: 'Night shift asked: I queried Kobi in **Slovak**; OEM PDFs are **DE/EN** only — the answer still came back in **SK** with the right refs. That’s the CEE floor reality.' },
     { id: 'g4', userId: 'pavol', time: minsAgo(47), text: 'Reminder — shift handover at 14:00.' },
   ],
 
@@ -132,7 +219,37 @@ If this doesn't match the motor nameplate, F-304 may trip under normal load.`,
       sources: [
         { title: 'Operator Manual', ref: '§12.4', date: '' },
         { title: 'Maintenance Log #MK-2026-0312', ref: 'J. Novák', date: '', isNote: true },
-        { title: 'Spare Parts Inventory', ref: '', date: '' },
+        { title: 'Spare Parts Inventory', ref: 'B3-12 · 3M-225-6 · QOH 4', date: 'snapshot', isNote: true },
+      ],
+    },
+    {
+      id: 's7',
+      userId: 'jozef',
+      time: hrsAgo(1.2),
+      text: '@kobi F-304 only after **warm start** post-break — never cold mornings. Feels intermittent. What should we log?',
+    },
+    {
+      id: 's8',
+      userId: 'kobi',
+      time: hrsAgo(1.2),
+      isBot: true,
+      markdown: `**Intermittent F-304 (warm / inrush pattern)**
+
+OEM text covers **steady-state** F-304. For **afternoon-only** trips I matched our internal log + one **community write-up** (fictional forum index) — *confirm before acting*:
+
+| Check | Risk |
+|-------|------|
+| Motor cable in drag chain — insulation cracks when warm | Medium |
+| Bearing drag as stack heats | Medium |
+| Module fan / airflow after several hours | High |
+
+**Next:** Log cold vs hot winding resistance; compare to 08:00 baseline.
+
+**Spares (demo snapshot):** Motor **1FK7083-5AF71** — **shelf D2-04 · QOH 1** (reorder if consumed) · Belt **3M-225-6** — **B3-12 · QOH 4**`,
+      sources: [
+        { title: 'Siemens App Note — thermal / inrush (fictional ref)', ref: 'AN-2019-04', date: '' },
+        { title: '[Forum] “F-304 afternoons only” — indexed (fictional)', ref: 'community', date: '' },
+        { title: 'Spare parts snapshot', ref: 'ERP · demo', date: '', isNote: true },
       ],
     },
   ],
@@ -227,6 +344,61 @@ Step-by-step isolation:
         { title: 'Zünd G3 Preventive Maintenance Schedule', ref: 'Rev 2.1', date: '' },
       ],
     },
+    {
+      id: 'z5',
+      userId: 'pavol',
+      time: hrsAgo(0.8),
+      text: '@kobi Web snapped on the roll — what\'s the **restart** sequence for the Zünd so we don\'t wrinkle the next sheet?',
+    },
+    {
+      id: 'z6',
+      userId: 'kobi',
+      time: hrsAgo(0.8),
+      isBot: true,
+      markdown: `**Web / film break — Zünd G3 (procedural restart)**
+
+1. Stop feed, raise knife, clear the path
+2. Re-thread per **Operator Manual §6.2** — ramp **tension** slowly (avoid snap)
+3. **Test** on scrap corner before good material
+4. Bring **vacuum zones** up 1 → 2 → 3 in order
+
+**Line context:** Same discipline as **CNC line 3** after a **timing-belt** event — an ordered reset keeps **#machine-kuka** from getting half-finished kits. See belt recovery thread in #machine-siemens.
+
+**Consumable (demo):** Tension assist spring **ZND-4412** — **shelf C2-01 · QOH 6**`,
+      sources: [
+        { title: 'Zünd G3 Operator Manual', ref: '§6.2 Web path', date: '' },
+        { title: 'Line coordination', ref: 'MES · demo', date: '', isNote: true },
+      ],
+    },
+    {
+      id: 'z7',
+      userId: 'pavol',
+      time: minsAgo(35),
+      text: '@kobi Quality wants less edge lift on **thick foam** — tune vacuum setpoints before we slow the knife?',
+    },
+    {
+      id: 'z8',
+      userId: 'kobi',
+      time: minsAgo(35),
+      isBot: true,
+      markdown: `**Vacuum zone tuning (process / quality)**
+
+| Zone | Now | Suggested | Note |
+|------|-----|------------|------|
+| 1 | −70 kPa | **−72 kPa** | More hold on lead edge |
+| 2 | −69 kPa | −69 kPa | OK |
+| 3 | −66 kPa | **−70 kPa** | Matches edge lift report |
+
+**How:** Cut Center → **Process → Vacuum → Advanced** — change one zone, ~2% steps, **5 good cuts** between changes.
+
+**Log every change** in the service log for audit. Revert if OEE drops.
+
+📦 *Related consumables:* seal strips on order — **QOH 0** (ETA Fri); flagging procurement.`,
+      sources: [
+        { title: 'Zünd G3 Process Guide', ref: 'Ch.11 Vacuum optimization', date: '' },
+        { title: 'Quality Q-2026-088', ref: 'edge lift · 40mm foam', date: '', isNote: true },
+      ],
+    },
   ],
 
   'docs-drop': [
@@ -245,6 +417,25 @@ Step-by-step isolation:
       isIngestion: true,
       file: { name: 'Siemens_SINAMICS_S120_FaultManual.pdf', size: '9.2', pages: 231, chunks: 1420, diagrams: 67, machine: '#machine-siemens-s7-1500', status: 'indexed' },
     },
+    {
+      id: 'dd4',
+      userId: 'kobi',
+      time: 'Today 07:15',
+      isBot: true,
+      markdown: `**Voice service log (demo)** — Transcribed and structured from shop-floor audio
+
+- **Machine:** Siemens S7-1500 CNC · \`#machine-siemens\`
+- **Component:** Motor module / timing path
+- **Work:** Replaced belt **3M-225-6** · tension **4.5 N** (Gates gauge) · test cut OK
+- **Operator:** @jozef · Shift A
+- **Linked:** INC-2026-0487
+
+_Hands-free capture → normalized fields for CMMS / service history (prototype)._`,
+      sources: [
+        { title: 'Voice capture policy', ref: 'SOP-AUDIO-01 (demo)', date: '' },
+        { title: 'Structured log export', ref: 'CMMS bridge · demo', date: '', isNote: true },
+      ],
+    },
   ],
 
   incidents: [],
@@ -254,7 +445,7 @@ const incidents = [
   { id: 'INC-2026-0482', machine: 'Zünd G3 Cutting', issue: 'Belt tension warning', severity: 'warning', status: 'resolved', openedBy: 'pavol', resolvedBy: 'pavol', opened: '3 days ago', resolved: '2 days ago', notes: 'Detected minor drift on pressure — tensioned and cleaned rail.', resolution: 'Permanent', mttr: '2h 14m', parts: [] },
   { id: 'INC-2026-0483', machine: 'Siemens S7-1500 CNC', issue: 'F-304 Overcurrent', severity: 'critical', status: 'resolved', openedBy: 'jozef', resolvedBy: 'jozef', opened: '2 days ago', resolved: '2 days ago', notes: 'Winding resistance low on phase V. Motor replaced.', resolution: 'Permanent', mttr: '1h 42m', parts: ['Siemens Motor 1FK7083-5AF71'] },
   { id: 'INC-2026-0484', machine: 'KUKA KR 60-3', issue: 'TCP calibration alert', severity: 'warning', status: 'resolved', openedBy: 'martin', resolvedBy: 'martin', opened: '2 days ago', resolved: '2 days ago', notes: 'TCP deviation 1.2 mm after tip change. Recalibrated.', resolution: 'Permanent', mttr: '0h 28m', parts: ['Welding tip WA-120'] },
-  { id: 'INC-2026-0485', machine: 'Conveyor L4', issue: 'Sensor calibration drift', severity: 'warning', status: 'open', openedBy: 'tomas', resolvedBy: null, opened: 'Yesterday', resolved: null, notes: 'SICK IME30 proximity sensor drifting ±3mm. Requires replacement.', resolution: null, mttr: null, parts: [] },
+  { id: 'INC-2026-0485', machine: 'Conveyor L4', issue: 'Sensor calibration drift', severity: 'warning', status: 'open', openedBy: 'tomas', resolvedBy: null, opened: 'Yesterday', resolved: null, notes: 'SICK IME30 proximity sensor drifting ±3mm. Part **IME30-15BPSZT0** — **shelf E1-08 · QOH 2** (reorder at min 1).', resolution: null, mttr: null, parts: ['SICK IME30-15BPSZT0 (E1-08, QOH 2)'] },
   { id: 'INC-2026-0486', machine: 'KUKA KR 60-3', issue: 'Welding arc misalignment', severity: 'warning', status: 'in-progress', openedBy: 'martin', resolvedBy: null, opened: 'Today 08:45', resolved: null, notes: 'Arc drift diagnosed to TCP deviation. Recalibration in progress.', resolution: null, mttr: null, parts: [] },
   { id: 'INC-2026-0487', machine: 'Siemens S7-1500 CNC', issue: 'F-304 Overcurrent repeat', severity: 'critical', status: 'awaiting-approval', openedBy: 'jozef', resolvedBy: null, opened: 'Today 09:14', resolved: null, notes: 'Timing belt snapped mid-cut. Replaced with 3M-225-6, tension 4.5N.', resolution: 'Permanent', mttr: null, parts: ['Timing belt 3M-225-6'] },
 ];
@@ -297,6 +488,7 @@ const predictiveAlerts = [
   { id: 'a1', machine: 'KUKA KR 60-3', type: 'warning', message: 'Welding tip wear at 87% — schedule replacement within 2 shifts' },
   { id: 'a2', machine: 'Compressor Unit', type: 'warning', message: 'Vibration pattern matches pre-failure signature from Oct 2025' },
   { id: 'a3', machine: 'Siemens S7-1500', type: 'info', message: '3 similar F-304 incidents in 14 days — possible motor degradation' },
+  { id: 'a4', machine: 'Siemens S7-1500', type: 'warning', message: 'Intermittent F-304 clusters after warm start — see thread in #machine-siemens' },
 ];
 
 const botResponses = {
@@ -312,12 +504,13 @@ Based on the repeated F-304 pattern this week, I'm seeing a possible motor degra
 2. Check thermal overload history in drive parameters r0947[0..7]
 3. Review bearing condition — worn bearings increase current draw
 
-**Parts to have ready**: Motor 1FK7083-5AF71 (1 unit in warehouse, shelf D2-04)
+**Parts to have ready (demo):** Motor **1FK7083-5AF71** — **shelf D2-04 · QOH 1** · auto-reorder if consumed
 
 ⚠️ 3 F-304 incidents in 14 days = investigate root cause before next shift.`,
       sources: [
         { title: 'Siemens SINAMICS Diagnostics Guide', ref: 'p.312', date: '' },
         { title: 'Maintenance Log #MK-2026-0418', ref: 'J. Novák · Today', date: '', isNote: true },
+        { title: 'Spare parts & inventory', ref: 'ERP snapshot · demo', date: '', isNote: true },
       ],
     },
     {
@@ -378,6 +571,18 @@ Based on the debris clearing yesterday, I've updated the maintenance recommendat
       sources: [
         { title: 'Zünd G3 PM Schedule', ref: 'Rev 2.1', date: '' },
         { title: 'Note — P. Kováč', ref: 'Yesterday', date: '', isNote: true },
+      ],
+    },
+    {
+      trigger: ['tuning', 'setpoint', 'parameter', 'edge', 'foam', 'quality', 'zone'],
+      markdown: `**Vacuum setpoint / process tuning**
+
+For **edge lift** and **zone pressure** adjustments, use small steps and log each change. The latest **peer-approved table** is in the #machine-zund thread (zones 1–3).
+
+I can re-summarize the suggested **−72 / −69 / −70 kPa** path and the **seal strip** procurement flag — say *"summarize zünd tuning"*.`,
+      sources: [
+        { title: 'Zünd G3 Process Guide', ref: 'Ch.11', date: '' },
+        { title: 'Service log (audit trail)', ref: 'required for setpoint changes', date: '', isNote: true },
       ],
     },
   ],
@@ -449,6 +654,24 @@ const i18n = {
     intKobiDesc: 'In-app Kobi direct message and knowledge panel (native, not an iframe).',
     intEmbedHint: 'In production, each tile opens your SSO iframe URL — same app-bar pattern as Mattermost.',
     channelMessages: 'Channel messages',
+    wsSwitchMenu: 'Site & lines',
+    wsSwitched: 'Site updated',
+    wsBrandName: 'KobiAI',
+    wsBratislava: 'Bratislava Plant',
+    wsBratislavaSub: 'Halls A–C · Press & welding',
+    wsKosice: 'Košice Plant',
+    wsKosiceSub: 'Assembly · main floor',
+    wsTrnava: 'Trnava Finishing',
+    wsTrnavaSub: 'Line 4 · cut & pack',
+    wsNavBrSi: 'CNC Line 3',
+    wsNavBrKu: 'Welding L1',
+    wsNavBrZu: 'Cutting',
+    wsNavKoKu: 'Weld line 1',
+    wsNavKoZu: 'Zünd cell',
+    wsNavKoSi: 'CNC (support)',
+    wsNavTrZu: 'Zünd (finishing)',
+    wsNavTrSi: 'CNC (support)',
+    wsNavTrKu: 'Weld (overflow)',
   },
   sk: {
     findChannel: 'Hľadať kanál',
@@ -506,6 +729,24 @@ const i18n = {
     intKobiDesc: 'Priama správa a znalostný panel (natívne).',
     intEmbedHint: 'V produkcii otvoríte SSO URL v iframe, ako u Mattermost.',
     channelMessages: 'Správy v kanáli',
+    wsSwitchMenu: 'Závod a linky',
+    wsSwitched: 'Závod bol zmenený',
+    wsBrandName: 'KobiAI',
+    wsBratislava: 'Závod Bratislava',
+    wsBratislavaSub: 'Haly A–C · lisovanie a zváranie',
+    wsKosice: 'Závod Košice',
+    wsKosiceSub: 'Montáž · prízemie',
+    wsTrnava: 'Dokončovňa Trnava',
+    wsTrnavaSub: 'Linka 4 · rezanie a balenie',
+    wsNavBrSi: 'CNC linka 3',
+    wsNavBrKu: 'Zváranie L1',
+    wsNavBrZu: 'Rezanie',
+    wsNavKoKu: 'Zváracia linka 1',
+    wsNavKoZu: 'Bunka Zünd',
+    wsNavKoSi: 'CNC (podpora)',
+    wsNavTrZu: 'Zünd (dokončenie)',
+    wsNavTrSi: 'CNC (podpora)',
+    wsNavTrKu: 'Zváranie (prebytok)',
   },
   de: {
     findChannel: 'Kanal suchen',
@@ -602,7 +843,8 @@ function mediaPreviewForSource(s) {
 }
 
 return {
-  users, channels, machines, integrationApps, conversations, incidents, dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine, predictiveAlerts, botResponses, voicePrefills, i18n,
+  users, channels, machines, workspaces, integrationApps, conversations, incidents, dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine, predictiveAlerts, botResponses, voicePrefills, i18n,
+  getWorkspaceById, getFirstMachineSlugForWorkspace, buildMachineNavEntries,
   DEMO_PDF_URL, mediaPreviewForFile, mediaPreviewForSource,
 };
 })();

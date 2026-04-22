@@ -1,8 +1,9 @@
 // KobiAI Sidebar v2 — structured navigation, accessible, vector icons
 
 function Sidebar() {
-  const { role, activeChannel, setActiveChannel, setShowOnPremModal, setSidebarOpen, setRightPanel, t } = useKobi();
-  const { channels, users, machines } = window.KobiData;
+  const { role, activeChannel, setActiveChannel, setShowOnPremModal, setSidebarOpen, setRightPanel, t, activeWorkspaceId } = useKobi();
+  const { buildMachineNavEntries } = window.KobiData;
+  const Ws = window.WorkspaceSwitcher;
   const [channelSearch, setChannelSearch] = useState('');
   const [expandedSection, setExpandedSection] = useState({ overview: true, machines: true, channels: true, dms: true });
   const I = window.Icons;
@@ -20,11 +21,7 @@ function Sidebar() {
     { slug: 'docs-drop', name: 'Docs Drop',  icon: I.inbox },
   ];
 
-  const machineList = [
-    { slug: 'machine-siemens', name: 'Siemens S7-1500', short: 'CNC Line 3',    icon: I.gear,   id: 'siemens', status: 'online' },
-    { slug: 'machine-kuka',    name: 'KUKA KR 60-3',    short: 'Welding Robot', icon: I.robot,  id: 'kuka',    status: 'maintenance' },
-    { slug: 'machine-zund',    name: 'Zünd G3',          short: 'Cutting Line',  icon: I.cutter, id: 'zund',    status: 'online' },
-  ];
+  const machineList = buildMachineNavEntries(activeWorkspaceId, t);
 
   const ACTIVE_BG   = 'rgba(255,255,255,0.18)';
   const HOVER_BG    = 'rgba(255,255,255,0.09)';
@@ -83,10 +80,7 @@ function Sidebar() {
           React.createElement('span', { style: { color: '#fff', fontWeight: 900, fontSize: 17, letterSpacing: '-0.5px' } }, 'K'),
           React.createElement('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 10, height: 10, background: '#4CAF50', borderRadius: '50%', border: '2px solid #4d0a52' } })
         ),
-        React.createElement('div', null,
-          React.createElement('div', { style: { color: '#fff', fontWeight: 800, fontSize: 16 } }, 'KobiAI'),
-          React.createElement('div', { style: { color: MUTED_COLOR, fontSize: 12 } }, 'Bratislava Plant')
-        )
+        Ws && React.createElement(Ws, { variant: 'sidebar' })
       ),
       // Search
       React.createElement('div', { style: { display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: '8px 12px', gap: 8, marginTop: 12 } },

@@ -418,10 +418,11 @@ function Composer({ channelName, onSend, onVoice, voiceActive, input, setInput, 
 
 /* Mattermost does not ship a “breadcrumb” strip: hierarchy is the team sidebar + channel title + optional channel header text.
    We still add a small trail here for parent → child (machine overview vs chat, overlays). */
-function buildBreadcrumbParts({ t, activeChannel, channel, machine, machineView, rightPanel, setMachineView, setRightPanel }) {
+function buildBreadcrumbParts({ t, activeChannel, channel, machine, machineView, rightPanel, setMachineView, setRightPanel, activeWorkspaceId }) {
   const closePanel = () => setRightPanel(null);
   const goMachineHome = () => { setRightPanel(null); setMachineView('home'); };
-  const parts = [{ key: 'ws', label: t('breadcrumbWorkspace') }];
+  const ws = window.KobiData.getWorkspaceById(activeWorkspaceId);
+  const parts = [{ key: 'ws', label: t(ws.nameKey) }];
 
   if (activeChannel === 'dashboard') {
     parts.push({ key: 'dash', label: t('dashboard') });
@@ -493,7 +494,7 @@ function BreadcrumbRow({ parts, compact }) {
 /* ─── Main ChatView ─── */
 function ChatView() {
   const I = window.Icons;
-  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, rightPanel, setRightPanel, setShowSearchOverlay, t, role, deviceMode } = useKobi();
+  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, rightPanel, setRightPanel, setShowSearchOverlay, t, role, deviceMode, activeWorkspaceId } = useKobi();
   const compact = deviceMode === 'mobile' || deviceMode === 'tablet';
   const { channels, users, machines, botResponses, voicePrefills } = window.KobiData;
   const [input, setInput] = useState('');
@@ -632,7 +633,7 @@ function ChatView() {
   const displayMessages = getDisplayMessages();
 
   const breadcrumbParts = buildBreadcrumbParts({
-    t, activeChannel, channel, machine, machineView, rightPanel, setMachineView, setRightPanel,
+    t, activeChannel, channel, machine, machineView, rightPanel, setMachineView, setRightPanel, activeWorkspaceId,
   });
 
   return React.createElement('div',{style:{flex:1,display:'flex',flexDirection:'column',background:'#fff',minWidth:0,overflow:'hidden'}},

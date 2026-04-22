@@ -5,6 +5,7 @@ const { useState, useEffect } = React;
 function TopBar() {
   const I = window.Icons;
   const { role, setRole, language, setLanguage, deviceMode, setDeviceMode, showSearchOverlay, setShowSearchOverlay, setSidebarOpen, addToast, t } = useKobi();
+  const Ws = window.WorkspaceSwitcher;
   const compactNav = deviceMode === 'mobile' || deviceMode === 'tablet';
 
   const langs = ['EN','SK','CZ','DE','PL'];
@@ -28,10 +29,7 @@ function TopBar() {
         'K',
         React.createElement('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 7, height: 7, background: '#4CAF50', borderRadius: '50%', border: '2px solid #4d0a52' } })
       ),
-      deviceMode !== 'mobile' && React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 4, color: '#fff', fontWeight: 700, fontSize: 13 } },
-        React.createElement('span', null, 'KobiAI · Bratislava Plant'),
-        I.chevronDown(12, 'rgba(255,255,255,0.65)')
-      )
+      deviceMode !== 'mobile' && Ws && React.createElement(Ws, { variant: 'topbar' })
     ),
 
     // Search bar

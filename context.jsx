@@ -20,6 +20,7 @@ function KobiProvider({ children }) {
   const [mediaViewer, setMediaViewer] = useState(null);
   /** Mattermost-style apps bar: which integration is open in the iframe panel (null = closed) */
   const [activeIntegrationId, setActiveIntegrationId] = useState(null);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState('bratislava');
 
   // messages: channelSlug -> Message[]
   const [messages, setMessages] = useState(() => {
@@ -55,7 +56,17 @@ function KobiProvider({ children }) {
 
   const switchRole = useCallback((newRole) => {
     setRole(newRole);
-    setActiveChannel(newRole === 'manager' ? 'dashboard' : 'machine-siemens');
+    const firstMachine = window.KobiData.getFirstMachineSlugForWorkspace(activeWorkspaceId);
+    setActiveChannel(newRole === 'manager' ? 'dashboard' : firstMachine);
+    setRightPanel(null);
+    setMediaViewer(null);
+    setActiveIntegrationId(null);
+  }, [activeWorkspaceId]);
+
+  const setActiveWorkspace = useCallback((id) => {
+    if (!id) return;
+    setActiveWorkspaceId(id);
+    setActiveChannel('dashboard');
     setRightPanel(null);
     setMediaViewer(null);
     setActiveIntegrationId(null);
@@ -63,6 +74,7 @@ function KobiProvider({ children }) {
 
   const value = {
     role, setRole: switchRole,
+    activeWorkspaceId, setActiveWorkspace,
     language, setLanguage,
     deviceMode, setDeviceMode,
     activeChannel, setActiveChannel,
