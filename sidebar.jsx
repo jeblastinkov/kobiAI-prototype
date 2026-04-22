@@ -167,7 +167,8 @@ function Sidebar() {
 
 function SidebarDrawer() {
   const { sidebarOpen, setSidebarOpen, deviceMode } = useKobi();
-  if (deviceMode !== 'mobile' || !sidebarOpen) return null;
+  const compactNav = deviceMode === 'mobile' || deviceMode === 'tablet';
+  if (!compactNav || !sidebarOpen) return null;
   return React.createElement('div', { style: { position: 'absolute', inset: 0, zIndex: 100, display: 'flex' } },
     React.createElement('div', { onClick: () => setSidebarOpen(false), style: { position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' } }),
     React.createElement('div', { style: { position: 'relative', zIndex: 1, height: '100%' } },

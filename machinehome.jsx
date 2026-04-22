@@ -1,9 +1,10 @@
 // KobiAI Machine Home — landing page for each machine channel
 
 function MachineHome({ machineId, onAction }) {
-  const { setRightPanel, addToast } = useKobi();
+  const { setRightPanel, deviceMode } = useKobi();
   const machine = window.KobiData.machines[machineId];
   const I = window.Icons;
+  const compact = deviceMode === 'mobile' || deviceMode === 'tablet';
 
   if (!machine) return null;
 
@@ -54,13 +55,13 @@ function MachineHome({ machineId, onAction }) {
   ];
 
   return React.createElement('div', {
-    style: { flex: 1, overflowY: 'auto', background: '#F5F6F8', padding: '32px 28px' }
+    style: { flex: 1, overflowY: 'auto', background: '#F5F6F8', padding: compact ? '18px 14px' : '32px 28px', minWidth: 0 }
   },
     // Machine header
     React.createElement('div', {
-      style: { background: '#fff', borderRadius: 16, padding: '24px 28px', marginBottom: 24, border: '1px solid #E4E7EB', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }
+      style: { background: '#fff', borderRadius: 16, padding: compact ? '18px 16px' : '24px 28px', marginBottom: compact ? 16 : 24, border: '1px solid #E4E7EB', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }
     },
-      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 20 } },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'flex-start', gap: compact ? 14 : 20, flexWrap: 'wrap', minWidth: 0 } },
         // Machine icon placeholder
         React.createElement('div', {
           style: {
@@ -74,9 +75,9 @@ function MachineHome({ machineId, onAction }) {
           machineId === 'kuka'    ? I.robot(40, machine.color) :
           I.cutter(40, machine.color)
         ),
-        React.createElement('div', { style: { flex: 1 } },
-          React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 } },
-            React.createElement('h1', { style: { fontSize: 22, fontWeight: 800, color: '#1A2433', margin: 0 } }, machine.name),
+        React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+          React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' } },
+            React.createElement('h1', { style: { fontSize: compact ? 18 : 22, fontWeight: 800, color: '#1A2433', margin: 0, lineHeight: 1.2 } }, machine.name),
             React.createElement('span', {
               style: { display: 'inline-flex', alignItems: 'center', gap: 5, background: machine.status === 'online' ? '#E8F5E9' : '#FFF8E1', border: `1px solid ${statusColor}44`, borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 700, color: statusColor }
             },
@@ -84,8 +85,8 @@ function MachineHome({ machineId, onAction }) {
               statusLabel
             )
           ),
-          React.createElement('div', { style: { fontSize: 15, color: '#6B8EAE', marginBottom: 10 } }, `${machine.type} · ${machine.location}`),
-          React.createElement('div', { style: { display: 'flex', gap: 20 } },
+          React.createElement('div', { style: { fontSize: compact ? 13 : 15, color: '#6B8EAE', marginBottom: 10, lineHeight: 1.35 } }, `${machine.type} · ${machine.location}`),
+          React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: compact ? '12px 18px' : 20 } },
             [
               { label: 'Docs indexed', value: machine.docsIndexed },
               { label: 'Knowledge chunks', value: machine.chunksIndexed.toLocaleString() },
@@ -106,7 +107,7 @@ function MachineHome({ machineId, onAction }) {
     React.createElement('div', { style: { marginBottom: 12 } },
       React.createElement('div', { style: { fontSize: 13, fontWeight: 700, color: '#8B97A3', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 } }, 'What would you like to do?')
     ),
-    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 } },
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${compact ? 160 : 220}px, 1fr))`, gap: 14 } },
       actions.map(action => {
         const [hov, setHov] = useState(false);
         return React.createElement('button', {
@@ -137,17 +138,17 @@ function MachineHome({ machineId, onAction }) {
 
     // Recent activity hint
     React.createElement('div', {
-      style: { marginTop: 24, padding: '14px 18px', background: '#fff', borderRadius: 12, border: '1px solid #E4E7EB', display: 'flex', alignItems: 'center', gap: 12 }
+      style: { marginTop: 24, padding: '14px 18px', background: '#fff', borderRadius: 12, border: '1px solid #E4E7EB', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', minWidth: 0 }
     },
       I.activity(18, '#9BA8B4'),
-      React.createElement('div', { style: { fontSize: 13, color: '#6B8EAE' } },
+      React.createElement('div', { style: { fontSize: 13, color: '#6B8EAE', flex: '1 1 200px', minWidth: 0 } },
         `Last incident: `,
         React.createElement('strong', { style: { color: '#1A2433' } }, machine.lastIncident),
         ` · ${machine.chunksIndexed.toLocaleString()} knowledge chunks ready`
       ),
       React.createElement('button', {
         onClick: () => onAction('chat'),
-        style: { marginLeft: 'auto', padding: '6px 14px', background: '#4d0a52', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }
+        style: { marginLeft: compact ? 0 : 'auto', padding: '6px 14px', background: '#4d0a52', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }
       }, 'Open Chat →')
     )
   );

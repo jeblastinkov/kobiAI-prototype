@@ -115,8 +115,8 @@ The motor module detected current exceeding the configured threshold. Common cau
 
 ⚠️ If resistance < 1.0 Ω, motor winding is damaged — do not restart.`,
       sources: [
-        { title: 'Siemens SINAMICS S120 Fault Manual', ref: 'p.247 (F-304)', date: 'indexed 12 Mar' },
-        { title: 'Machine Config Sheet — CNC Line 3', ref: 'updated 8 Jan', date: '' },
+        { title: 'Siemens SINAMICS S120 Fault Manual', ref: 'p.247 (F-304)', date: 'indexed 12 Mar', openAs: 'pdf' },
+        { title: 'Machine Config Sheet — CNC Line 3', ref: 'updated 8 Jan', date: '', openAs: 'pdf' },
       ],
       diagram: { label: '📊 Wiring Diagram — Fig. 8.14 (Motor Module Connection)' },
     },
@@ -137,8 +137,8 @@ Defines rated current of the connected motor in amperes. For your unit (Siemens 
 
 If this doesn't match the motor nameplate, F-304 may trip under normal load.`,
       sources: [
-        { title: 'SINAMICS S120 Parameter Manual', ref: 'p.89', date: '' },
-        { title: 'Motor Nameplate Photo (T. Kováč)', ref: '3 Feb 2026', date: '' },
+        { title: 'SINAMICS S120 Parameter Manual', ref: 'p.89', date: '', openAs: 'pdf' },
+        { title: 'Motor Nameplate Photo (T. Kováč)', ref: '3 Feb 2026', date: '', openAs: 'image' },
       ],
     },
     {
@@ -461,6 +461,8 @@ const i18n = {
     aiQueries: 'AI Queries Today',
     knowledgNotes: 'Knowledge Notes',
     resetDemo: 'Reset Demo',
+    breadcrumbWorkspace: 'Bratislava Plant',
+    knowledgePanel: 'Knowledge',
   },
   sk: {
     findChannel: 'Hľadať kanál',
@@ -501,6 +503,8 @@ const i18n = {
     aiQueries: 'AI Dotazy dnes',
     knowledgNotes: 'Poznámky znalostnej bázy',
     resetDemo: 'Resetovať demo',
+    breadcrumbWorkspace: 'Závod Bratislava',
+    knowledgePanel: 'Znalosti',
   },
   de: {
     findChannel: 'Kanal suchen',
@@ -564,10 +568,39 @@ const i18n = {
   },
 };
 
-return { users, channels, machines, conversations, incidents, dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine, predictiveAlerts, botResponses, voicePrefills, i18n };
+const DEMO_PDF_URL = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
+function mediaPreviewForFile(fileLike) {
+  if (!fileLike) return null;
+  if (fileLike.previewUrl) {
+    const kind = fileLike.previewKind || (/\.(png|jpe?g|gif|webp|svg)$/i.test(String(fileLike.name)) ? 'image' : 'pdf');
+    return { kind, src: fileLike.previewUrl, title: fileLike.name || 'Document' };
+  }
+  const name = typeof fileLike === 'string' ? fileLike : fileLike.name;
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.pdf')) return { kind: 'pdf', src: DEMO_PDF_URL, title: name };
+  if (/\.(png|jpe?g|gif|webp|svg)$/i.test(name)) {
+    const seed = String(name).replace(/[^a-z0-9]/gi, '').slice(0, 32) || 'img';
+    return { kind: 'image', src: 'https://picsum.photos/seed/' + encodeURIComponent(seed) + '/1600/1000', title: name };
+  }
+  return null;
+}
+function mediaPreviewForSource(s) {
+  if (!s) return null;
+  if (s.previewUrl) return { kind: s.previewKind || 'pdf', src: s.previewUrl, title: s.title || 'Source' };
+  if (/\.(pdf|png|jpe?g|gif|webp|svg)$/i.test(s.title || '')) return mediaPreviewForFile({ name: s.title });
+  if (s.openAs === 'pdf') return { kind: 'pdf', src: DEMO_PDF_URL, title: s.title || 'Document' };
+  if (s.openAs === 'image') {
+    const seed = 'src-' + (s.title || '').length;
+    return { kind: 'image', src: 'https://picsum.photos/seed/' + encodeURIComponent(seed) + '/1400/900', title: s.title || 'Image' };
+  }
+  return null;
+}
+
+return { users, channels, machines, conversations, incidents, dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine, predictiveAlerts, botResponses, voicePrefills, i18n, DEMO_PDF_URL, mediaPreviewForFile, mediaPreviewForSource };
 })();
 </script>
-<script>const { useState, useEffect, useRef, useCallback, createContext, useContext } = React;
+<script>var useState = React.useState, useEffect = React.useEffect, useRef = React.useRef, useCallback = React.useCallback, createContext = React.createContext, useContext = React.useContext;
 
 // KobiAI Context — global state for role, language, device, demo state
 
@@ -586,6 +619,7 @@ function KobiProvider({ children }) {
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
+  const [mediaViewer, setMediaViewer] = useState(null);
 
   // messages: channelSlug -> Message[]
   const [messages, setMessages] = useState(() => {
@@ -623,6 +657,7 @@ function KobiProvider({ children }) {
     setRole(newRole);
     setActiveChannel(newRole === 'manager' ? 'dashboard' : 'machine-siemens');
     setRightPanel(null);
+    setMediaViewer(null);
   }, []);
 
   const value = {
@@ -636,6 +671,7 @@ function KobiProvider({ children }) {
     showOnPremModal, setShowOnPremModal,
     showSearchOverlay, setShowSearchOverlay,
     sidebarOpen, setSidebarOpen,
+    mediaViewer, setMediaViewer,
     messages, addMessage,
     toasts, addToast,
     t,
@@ -650,6 +686,9 @@ function useKobi() {
 
 Object.assign(window, { KobiProvider, useKobi });
 
+</script>
+<script src="mediaviewer.js"></script>
+<script>var useState = React.useState, useEffect = React.useEffect, useRef = React.useRef, useCallback = React.useCallback, createContext = React.createContext, useContext = React.useContext;
 
 // KobiAI Left Sidebar — pure React.createElement, no JSX
 
@@ -709,13 +748,13 @@ function Sidebar() {
     );
   }
 
-  return ce('div', { style: { display: 'flex', flexDirection: 'column', height: '100%', background: '#1B2733', color: '#C5CCD4', width: 240, flexShrink: 0, overflow: 'hidden' } },
+  return ce('div', { style: { display: 'flex', flexDirection: 'column', height: '100%', background: '#4d0a52', color: '#C5CCD4', width: 240, flexShrink: 0, overflow: 'hidden' } },
     // Team header
-    ce('div', { style: { padding: '14px 16px 10px', borderBottom: '1px solid #243242', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+    ce('div', { style: { padding: '14px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
       ce('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
         ce('div', { style: { width: 32, height: 32, background: '#1E3A5F', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 15, position: 'relative', flexShrink: 0 } },
           'K',
-          ce('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, background: '#4CAF50', borderRadius: '50%', border: '2px solid #1B2733' } })
+          ce('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, background: '#4CAF50', borderRadius: '50%', border: '2px solid #4d0a52' } })
         ),
         ce('div', null,
           ce('div', { style: { color: '#fff', fontWeight: 700, fontSize: 14, lineHeight: 1.2 } }, 'KobiAI'),
@@ -727,7 +766,7 @@ function Sidebar() {
 
     // Search
     ce('div', { style: { padding: '8px 10px' } },
-      ce('div', { style: { display: 'flex', alignItems: 'center', background: '#243242', borderRadius: 6, padding: '6px 10px', gap: 6 } },
+      ce('div', { style: { display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: 6, padding: '6px 10px', gap: 6 } },
         ce('span', { style: { color: '#8B97A3', fontSize: 13 } }, '\uD83D\uDD0D'),
         ce('input', {
           value: channelSearch,
@@ -759,7 +798,7 @@ function Sidebar() {
       ...dms.map(u =>
         ce(NavItem, { key: u.id, slug: 'dm-' + u.id, icon: ce('span', { style: { position: 'relative', display: 'inline-flex' } },
             ce('div', { style: { width: 20, height: 20, borderRadius: '50%', background: u.color || '#555', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', fontWeight: 700 } }, u.initials),
-            ce('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 6, height: 6, background: u.online ? '#4CAF50' : '#6B7A8D', borderRadius: '50%', border: '1.5px solid #1B2733' } })
+            ce('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 6, height: 6, background: u.online ? '#4CAF50' : '#6B7A8D', borderRadius: '50%', border: '1.5px solid #4d0a52' } })
           ),
           label: u.name, isActive: activeChannel === 'dm-' + u.id, onClick: () => { setActiveChannel('dm-' + u.id); setSidebarOpen(false); }
         })
@@ -769,7 +808,7 @@ function Sidebar() {
     // Footer
     ce('button', {
       onClick: () => setShowOnPremModal(true),
-      style: { padding: '10px 14px', background: 'none', border: 'none', borderTop: '1px solid #243242', color: '#8B97A3', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left', width: '100%' }
+      style: { padding: '10px 14px', background: 'none', border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', color: '#8B97A3', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left', width: '100%' }
     },
       ce('span', { style: { color: '#4CAF50', fontSize: 14 } }, '\uD83D\uDD12'),
       ce('span', null, t('onPrem'))
@@ -779,7 +818,8 @@ function Sidebar() {
 
 function SidebarDrawer() {
   const { sidebarOpen, setSidebarOpen, deviceMode } = useKobi();
-  if (deviceMode !== 'mobile' || !sidebarOpen) return null;
+  const compactNav = deviceMode === 'mobile' || deviceMode === 'tablet';
+  if (!compactNav || !sidebarOpen) return null;
   return React.createElement('div', { style: { position: 'absolute', inset: 0, zIndex: 100, display: 'flex' } },
     React.createElement('div', { onClick: () => setSidebarOpen(false), style: { position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' } }),
     React.createElement('div', { style: { position: 'relative', zIndex: 1, height: '100%' } },
@@ -1488,16 +1528,17 @@ function LogbookPanel({ onClose }) {
 }
 
 function KnowledgePanel({ onClose }) {
+  const { setMediaViewer } = useKobi();
   const [activeTab, setActiveTab] = useState('docs');
   const { docs: docsList } = window.KobiData || { docs: [] };
 
   const indexedDocs = [
-    { name: 'Siemens SINAMICS S120 Fault Manual', machine: 'Siemens S7-1500', pages: 247, date: '12 Mar 2026' },
-    { name: 'KUKA System Software KSS 8.6', machine: 'KUKA KR 60-3', pages: 312, date: '5 Feb 2026' },
-    { name: 'Zünd G3 Operator Manual EN', machine: 'Zünd G3', pages: 412, date: '2 days ago' },
-    { name: 'Machine Config Sheet — CNC Line 3', machine: 'Siemens S7-1500', pages: 14, date: '8 Jan 2026' },
-    { name: 'Plant Safety SOP-042', machine: 'All', pages: 38, date: '15 Jan 2026' },
-    { name: 'KUKA KR60 System Manual v4', machine: 'KUKA KR 60-3', pages: 461, date: '3 days ago' },
+    { name: 'Siemens_SINAMICS_S120_FaultManual.pdf', machine: 'Siemens S7-1500', pages: 247, date: '12 Mar 2026' },
+    { name: 'KUKA_Software_KSS_8.6.pdf', machine: 'KUKA KR 60-3', pages: 312, date: '5 Feb 2026' },
+    { name: 'Zund_G3_Operator_Manual_EN.pdf', machine: 'Zünd G3', pages: 412, date: '2 days ago' },
+    { name: 'Machine_Config_CNC_Line3.pdf', machine: 'Siemens S7-1500', pages: 14, date: '8 Jan 2026' },
+    { name: 'Plant_Safety_SOP-042.pdf', machine: 'All', pages: 38, date: '15 Jan 2026' },
+    { name: 'KUKA_KR60_System_Manual_v4.pdf', machine: 'KUKA KR 60-3', pages: 461, date: '3 days ago' },
   ];
 
   const myNotes = [
@@ -1528,13 +1569,24 @@ function KnowledgePanel({ onClose }) {
       )
     ),
     React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: 12 } },
-      activeTab === 'docs' && indexedDocs.map((doc, i) => React.createElement('div', { key: i, style: { padding: '8px 10px', borderBottom: '1px solid #F0F2F4', display: 'flex', gap: 8 } },
-        React.createElement('span', { style: { fontSize: 16 } }, '📄'),
-        React.createElement('div', { style: { flex: 1 } },
-          React.createElement('div', { style: { fontSize: 13, color: '#1A2433', fontWeight: 500 } }, doc.name),
-          React.createElement('div', { style: { fontSize: 11, color: '#8B97A3', marginTop: 2 } }, `${doc.machine} · ${doc.pages} pages · ${doc.date}`)
-        )
-      )),
+      activeTab === 'docs' && indexedDocs.map(function (doc, i) {
+        var pv = window.KobiData && window.KobiData.mediaPreviewForFile ? window.KobiData.mediaPreviewForFile({ name: doc.name }) : null;
+        return React.createElement('div', {
+          key: i,
+          role: pv ? 'button' : undefined,
+          tabIndex: pv ? 0 : undefined,
+          title: pv ? 'Open in viewer' : undefined,
+          onKeyDown: pv ? function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMediaViewer(pv); } } : undefined,
+          onClick: pv ? function () { setMediaViewer(pv); } : undefined,
+          style: { padding: '8px 10px', borderBottom: '1px solid #F0F2F4', display: 'flex', gap: 8, cursor: pv ? 'pointer' : 'default' },
+        },
+          React.createElement('span', { style: { fontSize: 16 } }, '📄'),
+          React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+            React.createElement('div', { style: { fontSize: 13, color: '#1A2433', fontWeight: 500, textDecoration: pv ? 'underline' : 'none' } }, doc.name),
+            React.createElement('div', { style: { fontSize: 11, color: '#8B97A3', marginTop: 2 } }, doc.machine + ' · ' + doc.pages + ' pages · ' + doc.date)
+          )
+        );
+      }),
       activeTab === 'notes' && myNotes.map((note, i) => React.createElement('div', { key: i, style: { background: '#FFFDF0', border: '1px solid #FFE57F', borderRadius: 8, padding: '10px 12px', marginBottom: 8 } },
         React.createElement('div', { style: { fontSize: 13, color: '#1A2433', marginBottom: 4, lineHeight: 1.5 } }, note.text),
         React.createElement('div', { style: { fontSize: 11, color: '#8B97A3' } }, `${note.machine} · ${note.by} · ${note.date}`)
@@ -1550,7 +1602,8 @@ function KnowledgePanel({ onClose }) {
 }
 
 function RightPanel() {
-  const { rightPanel, setRightPanel, activeChannel } = useKobi();
+  const { rightPanel, setRightPanel, activeChannel, deviceMode } = useKobi();
+  const compactNav = deviceMode === 'mobile' || deviceMode === 'tablet';
 
   const isDmKobi = activeChannel === 'dm-kobi';
   const show = rightPanel || isDmKobi;
@@ -1569,6 +1622,33 @@ function RightPanel() {
     content = React.createElement(KnowledgePanel, { onClose: close });
   } else {
     return null;
+  }
+
+  const panelBox = {
+    width: deviceMode === 'mobile' ? '100%' : 320,
+    maxWidth: '100%',
+    height: '100%',
+    flexShrink: 0,
+    borderLeft: '1px solid #E8ECF0',
+    background: '#FAFBFC',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    boxShadow: compactNav ? '-6px 0 28px rgba(0,0,0,0.12)' : 'none',
+  };
+
+  if (compactNav) {
+    return React.createElement('div', {
+      style: { position: 'absolute', inset: 0, zIndex: 85, display: 'flex', flexDirection: 'row', alignItems: 'stretch' },
+    },
+      React.createElement('button', {
+        type: 'button',
+        'aria-label': 'Close panel',
+        onClick: close,
+        style: { flex: 1, minWidth: 0, border: 'none', padding: 0, cursor: 'pointer', background: 'rgba(15,23,42,0.42)' },
+      }),
+      React.createElement('div', { style: panelBox }, content)
+    );
   }
 
   return React.createElement('div', {
@@ -1650,35 +1730,57 @@ function Avatar({ user, size = 32 }) {
 }
 
 function SourcesCard({ sources, visible }) {
+  const { setMediaViewer } = useKobi();
   const [expanded, setExpanded] = useState(false);
   if (!visible || !sources?.length) return null;
   return React.createElement('div', {
     style: { marginTop: 8, background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 8, overflow: 'hidden', fontSize: 12 }
   },
     React.createElement('button', {
+      type: 'button',
       onClick: () => setExpanded(e => !e),
       style: { width: '100%', padding: '6px 10px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#1E3A5F', fontWeight: 600 }
     },
       React.createElement('span', null, '📄'),
-      React.createElement('span', null, `Sources (${sources.length})`),
+      React.createElement('span', null, 'Sources (' + sources.length + ')'),
       React.createElement('span', { style: { marginLeft: 'auto', color: '#6B8EAE' } }, expanded ? '▲' : '▼')
     ),
     expanded && React.createElement('div', { style: { padding: '4px 10px 8px', borderTop: '1px solid #C5D9EE' } },
-      sources.map((s, i) => React.createElement('div', { key: i, style: { display: 'flex', alignItems: 'flex-start', gap: 6, padding: '3px 0', borderBottom: i < sources.length - 1 ? '1px solid #DDE8F4' : 'none' } },
-        React.createElement('span', { style: { fontSize: 13 } }, s.isNote ? '🧠' : '📄'),
-        React.createElement('div', null,
-          React.createElement('div', { style: { color: '#1E3A5F', fontWeight: 500 } }, s.title),
-          (s.ref || s.date) && React.createElement('div', { style: { color: '#6B8EAE' } }, [s.ref, s.date].filter(Boolean).join(' · '))
-        )
-      ))
+      sources.map(function (s, i) {
+        var pv = window.KobiData && window.KobiData.mediaPreviewForSource ? window.KobiData.mediaPreviewForSource(s) : null;
+        return React.createElement('div', {
+          key: i,
+          style: { display: 'flex', alignItems: 'flex-start', gap: 6, padding: '3px 0', borderBottom: i < sources.length - 1 ? '1px solid #DDE8F4' : 'none', cursor: pv ? 'pointer' : 'default' },
+          role: pv ? 'button' : undefined,
+          tabIndex: pv ? 0 : undefined,
+          title: pv ? 'Open in viewer' : undefined,
+          onKeyDown: pv ? function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMediaViewer(pv); } } : undefined,
+          onClick: pv ? function () { setMediaViewer(pv); } : undefined,
+        },
+          React.createElement('span', { style: { fontSize: 13 } }, s.isNote ? '🧠' : '📄'),
+          React.createElement('div', { style: { minWidth: 0, flex: 1 } },
+            React.createElement('div', { style: { color: '#1E3A5F', fontWeight: 500, textDecoration: pv ? 'underline' : 'none' } }, s.title, pv ? ' · View' : ''),
+            (s.ref || s.date) && React.createElement('div', { style: { color: '#6B8EAE' } }, [s.ref, s.date].filter(Boolean).join(' · '))
+          )
+        );
+      })
     )
   );
 }
 
 function DiagramPreview({ diagram }) {
+  const { setMediaViewer } = useKobi();
   if (!diagram) return null;
+  var openDiagram = function () {
+    setMediaViewer({ kind: 'image', src: 'https://picsum.photos/seed/wiring-schematic/1500/900', title: diagram.label || 'Diagram' });
+  };
   return React.createElement('div', {
-    style: { marginTop: 8, background: '#E8EDF3', border: '1px solid #C5D0DB', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', maxWidth: 340 }
+    style: { marginTop: 8, background: '#E8EDF3', border: '1px solid #C5D0DB', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', maxWidth: 340 },
+    role: 'button',
+    tabIndex: 0,
+    title: 'View full size',
+    onKeyDown: function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDiagram(); } },
+    onClick: openDiagram,
   },
     React.createElement('div', { style: { width: 60, height: 40, background: 'repeating-linear-gradient(45deg, #C5D0DB, #C5D0DB 2px, #E8EDF3 2px, #E8EDF3 8px)', borderRadius: 4 } }),
     React.createElement('div', { style: { fontSize: 12, color: '#1E3A5F', fontWeight: 500 } }, diagram.label)
@@ -1719,8 +1821,11 @@ function IncidentCard({ incident: inc }) {
 }
 
 function IngestionCard({ file }) {
+  const { setMediaViewer } = useKobi();
   const [phase, setPhase] = useState(file.status === 'indexed' ? 'done' : 'parsing');
   const [progress, setProgress] = useState(file.status === 'indexed' ? 100 : 0);
+  var preview = window.KobiData && window.KobiData.mediaPreviewForFile ? window.KobiData.mediaPreviewForFile(file) : null;
+  var openPreview = function () { if (preview) setMediaViewer(preview); };
 
   useEffect(() => {
     if (file.status === 'indexed') return;
@@ -1736,7 +1841,14 @@ function IngestionCard({ file }) {
     return () => clearTimeout(t1);
   }, []);
 
-  return React.createElement('div', { style: { background: '#F0F8FF', border: '1px solid #C5D9EE', borderRadius: 8, padding: '10px 14px', maxWidth: 400 } },
+  return React.createElement('div', {
+    style: { background: '#F0F8FF', border: '1px solid #C5D9EE', borderRadius: 8, padding: '10px 14px', maxWidth: 400, cursor: preview ? 'pointer' : 'default', outline: 'none' },
+    role: preview ? 'button' : undefined,
+    tabIndex: preview ? 0 : undefined,
+    title: preview ? 'Open document preview' : undefined,
+    onKeyDown: preview ? function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPreview(); } } : undefined,
+    onClick: preview ? openPreview : undefined,
+  },
     React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 } },
       React.createElement('span', { style: { fontSize: 20 } }, '📄'),
       React.createElement('div', null,
@@ -1818,9 +1930,23 @@ function TypingIndicator() {
   );
 }
 
+const ASK_KOBI_AI_PREFIX = '/ask-kobiAI ';
+
+function SparklesIcon(sz, col) {
+  const c = col || '#1E3A5F';
+  return React.createElement('svg', {
+    width: sz, height: sz, viewBox: '0 0 24 24', fill: 'none', stroke: c, strokeWidth: 1.55,
+    strokeLinecap: 'round', strokeLinejoin: 'round', style: { display: 'block', flexShrink: 0 },
+  },
+    React.createElement('path', { d: 'M12 3v2.5M12 18.5V21M5 12h2.5M16.5 12H19M6.75 6.75l1.75 1.75M15.5 15.5l1.75 1.75M17.25 6.75L15.5 8.5M8.5 15.5l-1.75 1.75' }),
+    React.createElement('circle', { cx: 12, cy: 12, r: 1.25, fill: c, stroke: 'none' })
+  );
+}
+
 function SlashPopover({ input, onSelect, onClose }) {
   const commands = [
     { cmd: '/ask', desc: 'Ask KobiAI a question', handler: true },
+    { cmd: '/ask-kobiAI', desc: 'Ask KobiAI (same as AI button)', handler: true },
     { cmd: '/add-note', desc: 'Add a maintenance note to the knowledge base', handler: true },
     { cmd: '/incident', desc: 'Log a structured incident report', handler: true },
     { cmd: '/search', desc: 'Search messages and documents', handler: true },
@@ -1885,8 +2011,71 @@ function DocsDropZone({ onDrop }) {
   );
 }
 
+function kobiBuildBreadcrumbParts({ t, activeChannel, channel, rightPanel, setRightPanel }) {
+  const closePanel = () => setRightPanel(null);
+  const parts = [{ key: 'ws', label: t('breadcrumbWorkspace') }];
+
+  if (activeChannel === 'dashboard') {
+    parts.push({ key: 'dash', label: t('dashboard') });
+    return parts;
+  }
+
+  if (typeof activeChannel === 'string' && activeChannel.startsWith('dm-')) {
+    const dm = activeChannel.slice(3);
+    const u = window.KobiData.users[dm];
+    parts.push({ key: 'dmh', label: t('directMessages') });
+    parts.push({ key: 'dmn', label: u?.name || dm });
+    return parts;
+  }
+
+  if (!channel) return parts;
+
+  parts.push({
+    key: 'ch',
+    label: '#' + channel.name,
+    onClick: rightPanel ? closePanel : undefined,
+  });
+
+  if (rightPanel?.type === 'machine-card') {
+    parts.push({ key: 'panmc', label: t('machineCard') });
+  } else if (rightPanel?.type === 'logbook') {
+    parts.push({ key: 'panlb', label: t('logbook') });
+  } else if (rightPanel?.type === 'knowledge') {
+    parts.push({ key: 'pankn', label: t('knowledgePanel') });
+  }
+
+  return parts;
+}
+
+function KobiBreadcrumbRow({ parts, compact }) {
+  if (!parts || parts.length < 2) return null;
+  return React.createElement('nav', {
+    'aria-label': 'Breadcrumb',
+    style: {
+      fontSize: compact ? 12 : 13,
+      padding: compact ? '8px 12px' : '8px 16px',
+      lineHeight: 1.4,
+      background: '#fff',
+      borderTop: '1px solid #EEF0F2',
+    },
+  },
+    parts.map((p, i) => {
+      const isLast = i === parts.length - 1;
+      const isClickable = Boolean(p.onClick) && !isLast;
+      const child = isClickable
+        ? React.createElement('button', { type: 'button', onClick: p.onClick, style: { background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#5C6370', textDecoration: 'underline', textUnderlineOffset: 2, textDecorationColor: 'rgba(92,99,112,0.5)', font: 'inherit', fontWeight: 500 } }, p.label)
+        : React.createElement('span', { style: { color: isLast ? '#1A2433' : '#9BA8B4', fontWeight: isLast ? 700 : 400 } }, p.label);
+      return React.createElement(React.Fragment, { key: p.key },
+        i > 0 && React.createElement('span', { 'aria-hidden': true, style: { margin: '0 8px', color: '#B0B8C4', fontSize: 11, fontWeight: 400 } }, '>'),
+        child
+      );
+    })
+  );
+}
+
 function ChatView() {
-  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, setRightPanel, setShowSearchOverlay, t, role } = useKobi();
+  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, rightPanel, setRightPanel, setShowSearchOverlay, t, role, deviceMode } = useKobi();
+  const compact = deviceMode === 'mobile' || deviceMode === 'tablet';
   const { channels, users, machines, botResponses, voicePrefills } = window.KobiData;
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
@@ -1990,6 +2179,7 @@ function ChatView() {
     if (cmd.cmd === '/incident') { setInput(''); setShowIncident(true); return; }
     if (cmd.cmd === '/search') { setInput(''); setShowSearchOverlay(true); return; }
     if (cmd.cmd === '/ask') { setInput('@kobi '); inputRef.current?.focus(); return; }
+    if (cmd.cmd === '/ask-kobiAI') { setInput(ASK_KOBI_AI_PREFIX); inputRef.current?.focus(); return; }
     setInput(cmd.cmd + ' ');
     inputRef.current?.focus();
   };
@@ -2014,11 +2204,18 @@ function ChatView() {
     const chunks = pages * 4 + Math.round(Math.random() * 200);
     const diagrams = Math.round(pages * 0.1);
     const machineTarget = channel?.machineId ? `#machine-${channel.machineId}-kr-60` : '#machine-siemens-s7-1500';
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isImage = file.type && file.type.startsWith('image/');
+    var previewUrl, previewKind;
+    if (isPdf || isImage) {
+      previewUrl = URL.createObjectURL(file);
+      previewKind = isImage ? 'image' : 'pdf';
+    }
     addMessage('docs-drop', {
       id: Date.now() + 'doc', userId: 'kobi',
       time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
       isBot: true, isIngestion: true,
-      file: { name: file.name, size: sizeMB, pages, chunks, diagrams, machine: machineTarget, status: 'parsing' },
+      file: { name: file.name, size: sizeMB, pages, chunks, diagrams, machine: machineTarget, status: 'parsing', previewUrl: previewUrl, previewKind: previewKind },
     });
     addToast('Document received. Indexing…', 'info');
   };
@@ -2059,32 +2256,24 @@ function ChatView() {
   const displayMessages = getDisplayMessages();
   const showSlash = input.startsWith('/') && input.length >= 1;
 
+  const breadcrumbParts = kobiBuildBreadcrumbParts({ t, activeChannel, channel, rightPanel, setRightPanel });
+
   return React.createElement('div', { style: { flex: 1, display: 'flex', flexDirection: 'column', background: '#fff', minWidth: 0, overflow: 'hidden' } },
-    // Channel header
-    React.createElement('div', {
-      style: { height: 50, borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, flexShrink: 0, background: '#fff' }
-    },
-      channel && React.createElement(React.Fragment, null,
-        React.createElement('span', { style: { fontSize: 16 } }, channel.icon),
-        React.createElement('div', null,
-          React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433' } }, channel.name),
-          React.createElement('div', { style: { fontSize: 11, color: '#9BA8B4' } }, `${channel.members} ${t('members')}${channel.purpose ? ' · ' + channel.purpose : ''}`)
-        ),
-        machine && React.createElement(React.Fragment, null,
-          React.createElement('div', { style: { marginLeft: 'auto', display: 'flex', gap: 6 } },
-            [
-              { label: t('machineCard'), fn: () => setRightPanel({ type: 'machine-card', machineId: channel.machineId }) },
-              { label: t('logbook'), fn: () => setRightPanel({ type: 'logbook' }) },
-              { label: t('askKobi'), fn: () => { setInput('@kobi '); inputRef.current?.focus(); } },
-            ].map(btn => React.createElement('button', {
-              key: btn.label,
-              onClick: btn.fn,
-              style: { padding: '4px 10px', background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 6, fontSize: 12, color: '#1E3A5F', cursor: 'pointer', fontWeight: 500 }
-            }, btn.label))
-          )
-        ),
-        !machine && channel.slug !== 'dashboard' && channel.slug !== 'docs-drop' && React.createElement('div', { style: { marginLeft: 'auto' } })
-      )
+    // Channel header + breadcrumb row (standalone HTML bundle — no machine overview split)
+    React.createElement('div', { style: { flexShrink: 0, background: '#fff', borderBottom: '1px solid #E8ECF0', display: 'flex', flexDirection: 'column' } },
+      React.createElement('div', {
+        style: { height: 'auto', minHeight: 50, display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 8, columnGap: 10, padding: compact ? '8px 12px' : '0 16px', gap: 10, background: '#fff' }
+      },
+        channel && React.createElement(React.Fragment, null,
+          React.createElement('span', { style: { fontSize: 16 } }, channel.icon),
+          React.createElement('div', { style: { minWidth: 0, flex: '1 1 140px' } },
+            React.createElement('div', { style: { fontWeight: 700, fontSize: compact ? 13 : 14, color: '#1A2433' } }, channel.name),
+            React.createElement('div', { style: { fontSize: 11, color: '#9BA8B4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: compact ? 'nowrap' : 'normal', maxWidth: compact ? '100%' : 'none' } }, `${channel.members} ${t('members')}${channel.purpose ? ' · ' + (compact ? channel.purpose.slice(0, 36) : channel.purpose) : ''}`)
+          ),
+          !machine && channel.slug !== 'dashboard' && channel.slug !== 'docs-drop' && React.createElement('div', { style: { marginLeft: 'auto' } })
+        )
+      ),
+      React.createElement(KobiBreadcrumbRow, { parts: breadcrumbParts, compact })
     ),
 
     // Messages area
@@ -2126,6 +2315,13 @@ function ChatView() {
             style: { flex: 1, background: 'none', border: 'none', outline: 'none', resize: 'none', fontSize: 14, color: '#1A2433', lineHeight: 1.5, maxHeight: 120, overflow: 'auto', fontFamily: 'Inter, system-ui, sans-serif' }
           }),
           React.createElement('button', {
+            type: 'button',
+            title: 'Ask KobiAI',
+            onClick: () => { setInput(ASK_KOBI_AI_PREFIX); inputRef.current?.focus(); },
+            style: { background: '#E8EEF5', border: 'none', cursor: 'pointer', padding: '4px 7px', borderRadius: 6, color: '#1E3A5F', transition: 'all 0.2s', display: 'flex', alignItems: 'center', flexShrink: 0 },
+          }, SparklesIcon(18, '#1E3A5F')),
+          React.createElement('button', {
+            type: 'button',
             onClick: handleVoice,
             style: { background: voiceActive ? '#FEE' : 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '4px 6px', borderRadius: 6, color: voiceActive ? '#F44336' : '#8B97A3', transition: 'all 0.2s' }
           }, '🎤'),
@@ -2153,17 +2349,20 @@ Object.assign(window, { ChatView, Avatar, MarkdownText });
 
 function TopBar() {
   const { role, setRole, language, setLanguage, deviceMode, setDeviceMode, showSearchOverlay, setShowSearchOverlay, setSidebarOpen, addToast, t } = useKobi();
+  const compactNav = deviceMode === 'mobile' || deviceMode === 'tablet';
 
   const langs = ['EN','SK','CZ','DE','PL'];
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
 
   return React.createElement('div', {
-    style: { height: 50, background: '#1B2733', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, flexShrink: 0, zIndex: 10, position: 'relative' }
+    style: { height: 50, background: '#4d0a52', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, flexShrink: 0, zIndex: 10, position: 'relative' }
   },
-    // Hamburger (mobile only)
-    deviceMode === 'mobile' && React.createElement('button', {
+    // Hamburger when sidebar is off-canvas (tablet + mobile)
+    compactNav && React.createElement('button', {
+      type: 'button',
       onClick: () => setSidebarOpen(true),
+      title: 'Open menu',
       style: { background: 'none', border: 'none', cursor: 'pointer', color: '#C5CCD4', fontSize: 18, padding: '4px 6px', borderRadius: 4 }
     }, '☰'),
 
@@ -2171,7 +2370,7 @@ function TopBar() {
     React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 } },
       React.createElement('div', { style: { width: 28, height: 28, background: '#1E3A5F', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13, position: 'relative' } },
         'K',
-        React.createElement('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 7, height: 7, background: '#4CAF50', borderRadius: '50%', border: '2px solid #1B2733' } })
+        React.createElement('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 7, height: 7, background: '#4CAF50', borderRadius: '50%', border: '2px solid #4d0a52' } })
       ),
       deviceMode !== 'mobile' && React.createElement('span', { style: { color: '#fff', fontWeight: 700, fontSize: 13 } }, 'KobiAI · Bratislava Plant ▾')
     ),
@@ -2179,7 +2378,7 @@ function TopBar() {
     // Search bar
     React.createElement('button', {
       onClick: () => setShowSearchOverlay(true),
-      style: { flex: 1, maxWidth: 320, margin: '0 auto', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#8B97A3', fontSize: 13, textAlign: 'left' }
+      style: { flex: 1, maxWidth: deviceMode === 'mobile' ? 200 : deviceMode === 'tablet' ? 260 : 320, minWidth: 0, margin: '0 auto', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#8B97A3', fontSize: 13, textAlign: 'left' }
     },
       React.createElement('span', null, '🔍'),
       React.createElement('span', null, t('search'))
@@ -2188,13 +2387,13 @@ function TopBar() {
     // Right controls
     React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 } },
       // Demo pill
-      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 4, background: '#2F3E50', borderRadius: 20, padding: '3px 10px', cursor: 'pointer' } },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(0,0,0,0.22)', borderRadius: 20, padding: '3px 10px', cursor: 'pointer' } },
         React.createElement('span', { style: { width: 6, height: 6, borderRadius: '50%', background: '#FFD54F', display: 'inline-block' } }),
         deviceMode !== 'mobile' && React.createElement('span', { style: { color: '#C5CCD4', fontSize: 11, fontWeight: 600 } }, 'DEMO')
       ),
 
       // Device preview (always visible so mobile preview can switch back to desktop/tablet)
-      React.createElement('div', { style: { display: 'flex', background: '#2F3E50', borderRadius: 6, overflow: 'hidden', flexShrink: 0 } },
+      React.createElement('div', { style: { display: 'flex', background: 'rgba(0,0,0,0.22)', borderRadius: 6, overflow: 'hidden', flexShrink: 0 } },
         [['desktop','🖥️'],['tablet','📱'],['mobile','📱']].map(([mode]) =>
           React.createElement('button', {
             key: mode, type: 'button', onClick: () => setDeviceMode(mode),
@@ -2208,14 +2407,14 @@ function TopBar() {
       React.createElement('div', { style: { position: 'relative' } },
         React.createElement('button', {
           onClick: () => { setShowLangMenu(l => !l); setShowRoleMenu(false); },
-          style: { background: '#2F3E50', border: 'none', borderRadius: 6, padding: '4px 9px', cursor: 'pointer', color: '#C5CCD4', fontSize: 12, fontWeight: 700 }
+          style: { background: 'rgba(0,0,0,0.22)', border: 'none', borderRadius: 6, padding: '4px 9px', cursor: 'pointer', color: '#C5CCD4', fontSize: 12, fontWeight: 700 }
         }, language.toUpperCase() + ' ▾'),
         showLangMenu && React.createElement('div', {
-          style: { position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#1B2733', border: '1px solid #2F3E50', borderRadius: 8, overflow: 'hidden', zIndex: 100, minWidth: 80 }
+          style: { position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#3a0a42', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden', zIndex: 100, minWidth: 80 }
         },
           langs.map(l => React.createElement('button', {
             key: l, onClick: () => { setLanguage(l.toLowerCase()); setShowLangMenu(false); },
-            style: { display: 'block', width: '100%', padding: '7px 14px', background: language === l.toLowerCase() ? '#2F3E50' : 'none', border: 'none', cursor: 'pointer', color: '#C5CCD4', fontSize: 12, textAlign: 'left', fontWeight: language === l.toLowerCase() ? 700 : 400 }
+            style: { display: 'block', width: '100%', padding: '7px 14px', background: language === l.toLowerCase() ? 'rgba(0,0,0,0.25)' : 'none', border: 'none', cursor: 'pointer', color: '#C5CCD4', fontSize: 12, textAlign: 'left', fontWeight: language === l.toLowerCase() ? 700 : 400 }
           }, l))
         )
       ),
@@ -2224,14 +2423,13 @@ function TopBar() {
       React.createElement('div', { style: { position: 'relative' } },
         React.createElement('button', {
           onClick: () => { setShowRoleMenu(r => !r); setShowLangMenu(false); },
-          style: { background: '#2F3E50', border: 'none', borderRadius: 6, padding: '4px 9px', cursor: 'pointer', color: '#C5CCD4', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }
+          style: { background: 'rgba(0,0,0,0.22)', border: 'none', borderRadius: 6, padding: '4px 9px', cursor: 'pointer', color: '#C5CCD4', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }
         },
           React.createElement('span', { style: { width: 18, height: 18, borderRadius: '50%', background: role === 'manager' ? '#1E3A5F' : '#2E7D32', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', fontWeight: 800 } }, role === 'manager' ? 'MH' : 'JN'),
-          deviceMode !== 'mobile' && React.createElement('span', null, role === 'manager' ? 'Martin H.' : 'Jozef N.'),
           '▾'
         ),
         showRoleMenu && React.createElement('div', {
-          style: { position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#1B2733', border: '1px solid #2F3E50', borderRadius: 8, overflow: 'hidden', zIndex: 100, minWidth: 200 }
+          style: { position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#3a0a42', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden', zIndex: 100, minWidth: 200 }
         },
           React.createElement('div', { style: { padding: '8px 14px', fontSize: 10, color: '#6B8EAE', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' } }, t('viewAs')),
           [
@@ -2239,7 +2437,7 @@ function TopBar() {
             { r: 'technician', name: 'Jozef Novák', label: t('technician'), initials: 'JN', color: '#2E7D32' },
           ].map(opt => React.createElement('button', {
             key: opt.r, onClick: () => { setRole(opt.r); setShowRoleMenu(false); },
-            style: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 14px', background: role === opt.r ? '#2F3E50' : 'none', border: 'none', cursor: 'pointer', color: '#C5CCD4', fontSize: 13, textAlign: 'left' }
+            style: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 14px', background: role === opt.r ? 'rgba(0,0,0,0.25)' : 'none', border: 'none', cursor: 'pointer', color: '#C5CCD4', fontSize: 13, textAlign: 'left' }
           },
             React.createElement('div', { style: { width: 26, height: 26, borderRadius: '50%', background: opt.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff', fontWeight: 800 } }, opt.initials),
             React.createElement('div', null,
@@ -2256,11 +2454,12 @@ function TopBar() {
 
 function Shell() {
   const { deviceMode } = useKobi();
+  const showInlineSidebar = deviceMode === 'desktop';
   return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' } },
     React.createElement(TopBar),
     React.createElement('div', { style: { flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' } },
-      // Sidebar (hidden on mobile — drawer instead)
-      deviceMode !== 'mobile' && React.createElement(Sidebar),
+      // Sidebar (desktop only; tablet/mobile use drawer)
+      showInlineSidebar && React.createElement(Sidebar),
       React.createElement(SidebarDrawer),
       // Centre
       React.createElement(ChatView),
@@ -2269,7 +2468,8 @@ function Shell() {
     ),
     React.createElement(OnPremModal),
     React.createElement(SearchOverlay),
-    React.createElement(ToastContainer)
+    React.createElement(ToastContainer),
+    React.createElement(MediaViewer)
   );
 }
 

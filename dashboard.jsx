@@ -131,7 +131,7 @@ function IncidentsTable() {
     'awaiting-approval': { color: '#E65100', bg: '#FFF3E0', label: 'Awaiting' },
   };
 
-  return React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, overflow: 'hidden' } },
+  return React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, overflowX: 'auto', overflowY: 'hidden', minWidth: 0 } },
     React.createElement('div', { style: { padding: '16px 20px', borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
       React.createElement('div', { style: { fontWeight: 700, fontSize: 15, color: '#1A2433' } }, 'Recent Incidents'),
       React.createElement('button', { style: { padding: '5px 12px', background: '#F3EAF5', border: '1px solid #C9A8D0', borderRadius: 8, fontSize: 12, color: '#4d0a52', cursor: 'pointer', fontWeight: 600 } }, 'View all →')
@@ -214,7 +214,8 @@ function AlertsPanel() {
 /* ─── Main Dashboard view ─── */
 
 function DashboardView() {
-  const { openIncidentCount, t } = useKobi();
+  const { openIncidentCount, t, deviceMode } = useKobi();
+  const compact = deviceMode === 'mobile' || deviceMode === 'tablet';
   const { dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine } = window.KobiData;
   const [pulseIdx, setPulseIdx] = useState(-1);
   const pulseRef = useRef(null);
@@ -233,9 +234,9 @@ function DashboardView() {
     { key: 3, label: 'Knowledge Notes', value: dashboardKPIs.knowledgeNotes.value, trend: dashboardKPIs.knowledgeNotes.trend, trendDir: 'up', color: '#1565C0' },
   ];
 
-  return React.createElement('div', { style: { padding: '24px 24px', overflowY: 'auto', height: '100%', boxSizing: 'border-box', background: '#F5F6F8' } },
+  return React.createElement('div', { style: { padding: compact ? '14px 12px' : '24px 24px', overflowY: 'auto', height: '100%', boxSizing: 'border-box', background: '#F5F6F8', minWidth: 0 } },
     // Header
-    React.createElement('div', { style: { marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
+    React.createElement('div', { style: { marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 } },
       React.createElement('div', null,
         React.createElement('h1', { style: { fontSize: 20, fontWeight: 800, color: '#1A2433', margin: 0 } }, 'Manager Dashboard'),
         React.createElement('div', { style: { fontSize: 13, color: '#8B97A3', marginTop: 3 } }, 'Bratislava Plant · rolling 30 days')
@@ -252,7 +253,7 @@ function DashboardView() {
     ),
 
     // Charts row 1
-    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 16, marginBottom: 16 } },
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit,minmax(300px,1fr))', gap: 16, marginBottom: 16 } },
       React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, padding: '18px 20px' } },
         React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 16 } }, 'Incidents by Machine'),
         React.createElement(HorizontalBarChart, { data: incidentsByMachine, maxVal: 12, color: '#4d0a52' })
@@ -265,7 +266,7 @@ function DashboardView() {
     ),
 
     // Charts row 2
-    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 16, marginBottom: 20 } },
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit,minmax(300px,1fr))', gap: 16, marginBottom: 20 } },
       React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, padding: '18px 20px' } },
         React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 4 } }, 'MTTR Trend — 12 weeks'),
         React.createElement('div', { style: { fontSize: 12, color: '#2E7D32', fontWeight: 600, marginBottom: 10 } }, '▼ 12% since KobiAI deployment (W7)'),
@@ -279,7 +280,7 @@ function DashboardView() {
     ),
 
     // Table + alerts
-    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16, alignItems: 'start' } },
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: compact ? '1fr' : '1fr 320px', gap: 16, alignItems: 'start' } },
       React.createElement(IncidentsTable),
       React.createElement(AlertsPanel)
     )

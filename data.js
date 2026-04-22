@@ -20,6 +20,15 @@ const channels = [
   { slug: 'dashboard',            name: 'dashboard',               icon: '📊', purpose: 'Manager Dashboard · rolling 30d', members: 3, pinned: 0, managerOnly: true },
 ];
 
+/** Mattermost-style apps bar: 3rd-party tools opened beside chat (iframe in production) */
+const integrationApps = [
+  { id: 'teams',  nameKey: 'intMsTeams',  descKey: 'intMsTeamsDesc',  color: '#5B5FC7', icon: 'intMsTeams',  embedUrl: null },
+  { id: 'cmms',   nameKey: 'intCmms',     descKey: 'intCmmsDesc',     color: '#0D9488', icon: 'intCmms',     embedUrl: null },
+  { id: 'erp',    nameKey: 'intErp',      descKey: 'intErpDesc',      color: '#D4A012', icon: 'intErp',      embedUrl: null },
+  { id: 'mes',    nameKey: 'intMes',      descKey: 'intMesDesc',      color: '#2563EB', icon: 'intMes',      embedUrl: null },
+  { id: 'kobi',   nameKey: 'intKobi',     descKey: 'intKobiDesc',     color: '#6B1B72', icon: 'sparkles',  embedUrl: null, openDmKobi: true },
+];
+
 const machines = {
   siemens: {
     id: 'siemens', name: 'Siemens S7-1500 CNC', type: 'CNC Machining Centre',
@@ -77,8 +86,8 @@ The motor module detected current exceeding the configured threshold. Common cau
 
 ⚠️ If resistance < 1.0 Ω, motor winding is damaged — do not restart.`,
       sources: [
-        { title: 'Siemens SINAMICS S120 Fault Manual', ref: 'p.247 (F-304)', date: 'indexed 12 Mar' },
-        { title: 'Machine Config Sheet — CNC Line 3', ref: 'updated 8 Jan', date: '' },
+        { title: 'Siemens SINAMICS S120 Fault Manual', ref: 'p.247 (F-304)', date: 'indexed 12 Mar', openAs: 'pdf' },
+        { title: 'Machine Config Sheet — CNC Line 3', ref: 'updated 8 Jan', date: '', openAs: 'pdf' },
       ],
       diagram: { label: '📊 Wiring Diagram — Fig. 8.14 (Motor Module Connection)' },
     },
@@ -99,8 +108,8 @@ Defines rated current of the connected motor in amperes. For your unit (Siemens 
 
 If this doesn't match the motor nameplate, F-304 may trip under normal load.`,
       sources: [
-        { title: 'SINAMICS S120 Parameter Manual', ref: 'p.89', date: '' },
-        { title: 'Motor Nameplate Photo (T. Kováč)', ref: '3 Feb 2026', date: '' },
+        { title: 'SINAMICS S120 Parameter Manual', ref: 'p.89', date: '', openAs: 'pdf' },
+        { title: 'Motor Nameplate Photo (T. Kováč)', ref: '3 Feb 2026', date: '', openAs: 'image' },
       ],
     },
     {
@@ -423,6 +432,22 @@ const i18n = {
     aiQueries: 'AI Queries Today',
     knowledgNotes: 'Knowledge Notes',
     resetDemo: 'Reset Demo',
+    breadcrumbWorkspace: 'Bratislava Plant',
+    machineOverview: 'Overview',
+    machineChat: 'Chat',
+    knowledgePanel: 'Knowledge',
+    appsBar: 'Integrations',
+    intMsTeams: 'Microsoft Teams',
+    intMsTeamsDesc: 'Shifts, channels, and calls — embedded like Mattermost with Microsoft.',
+    intCmms: 'CMMS',
+    intCmmsDesc: 'Work orders and asset history (Fiix / Infor EAM / Maximo style).',
+    intErp: 'ERP',
+    intErpDesc: 'Orders, stock, and costing (SAP/IFS-style bridge).',
+    intMes: 'MES',
+    intMesDesc: 'Shop-floor execution, OEE, and line status.',
+    intKobi: 'Kobi AI',
+    intKobiDesc: 'In-app Kobi direct message and knowledge panel (native, not an iframe).',
+    intEmbedHint: 'In production, each tile opens your SSO iframe URL — same app-bar pattern as Mattermost.',
   },
   sk: {
     findChannel: 'Hľadať kanál',
@@ -463,6 +488,22 @@ const i18n = {
     aiQueries: 'AI Dotazy dnes',
     knowledgNotes: 'Poznámky znalostnej bázy',
     resetDemo: 'Resetovať demo',
+    breadcrumbWorkspace: 'Závod Bratislava',
+    machineOverview: 'Prehľad',
+    machineChat: 'Chat',
+    knowledgePanel: 'Znalosti',
+    appsBar: 'Integrácie',
+    intMsTeams: 'Microsoft Teams',
+    intMsTeamsDesc: 'Zmeny, kanály, hovory — vložené podobne ako Mattermost s Microsoftom.',
+    intCmms: 'CMMS',
+    intCmmsDesc: 'Príkazy práce a história aktív.',
+    intErp: 'ERP',
+    intErpDesc: 'Objednávky, sklad, náklady (SAP/IFS).',
+    intMes: 'MES',
+    intMesDesc: 'Dielňa, OEE, linky.',
+    intKobi: 'Kobi AI',
+    intKobiDesc: 'Priama správa a znalostný panel (natívne).',
+    intEmbedHint: 'V produkcii otvoríte SSO URL v iframe, ako u Mattermost.',
   },
   de: {
     findChannel: 'Kanal suchen',
@@ -526,5 +567,40 @@ const i18n = {
   },
 };
 
-return { users, channels, machines, conversations, incidents, dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine, predictiveAlerts, botResponses, voicePrefills, i18n };
+/** Public sample PDF for demo previews (all “manual” PDFs open this in the prototype). */
+const DEMO_PDF_URL = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
+
+function mediaPreviewForFile(fileLike) {
+  if (!fileLike) return null;
+  if (fileLike.previewUrl) {
+    const kind = fileLike.previewKind || (/\.(png|jpe?g|gif|webp|svg)$/i.test(String(fileLike.name)) ? 'image' : 'pdf');
+    return { kind, src: fileLike.previewUrl, title: fileLike.name || 'Document' };
+  }
+  const name = typeof fileLike === 'string' ? fileLike : fileLike.name;
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.pdf')) return { kind: 'pdf', src: DEMO_PDF_URL, title: name };
+  if (/\.(png|jpe?g|gif|webp|svg)$/i.test(name)) {
+    const seed = String(name).replace(/[^a-z0-9]/gi, '').slice(0, 32) || 'img';
+    return { kind: 'image', src: `https://picsum.photos/seed/${encodeURIComponent(seed)}/1600/1000`, title: name };
+  }
+  return null;
+}
+
+function mediaPreviewForSource(s) {
+  if (!s) return null;
+  if (s.previewUrl) return { kind: s.previewKind || 'pdf', src: s.previewUrl, title: s.title || 'Source' };
+  if (/\.(pdf|png|jpe?g|gif|webp|svg)$/i.test(s.title || '')) return mediaPreviewForFile({ name: s.title });
+  if (s.openAs === 'pdf') return { kind: 'pdf', src: DEMO_PDF_URL, title: s.title || 'Document' };
+  if (s.openAs === 'image') {
+    const seed = `src-${(s.title || '').length}`;
+    return { kind: 'image', src: `https://picsum.photos/seed/${encodeURIComponent(seed)}/1400/900`, title: s.title || 'Image' };
+  }
+  return null;
+}
+
+return {
+  users, channels, machines, integrationApps, conversations, incidents, dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine, predictiveAlerts, botResponses, voicePrefills, i18n,
+  DEMO_PDF_URL, mediaPreviewForFile, mediaPreviewForSource,
+};
 })();

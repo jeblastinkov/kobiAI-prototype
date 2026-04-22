@@ -55,9 +55,16 @@ function Avatar({ user, size = 36 }) {
 
 /* ─── File attachment card ─── */
 function FileCard({ file }) {
+  const { setMediaViewer } = useKobi();
+  const preview = (window.KobiData && window.KobiData.mediaPreviewForFile) ? window.KobiData.mediaPreviewForFile(file) : null;
   const ext = file.name.split('.').pop().toUpperCase();
   const extColor = ext==='PDF'?'#E53935':ext==='DOCX'?'#1565C0':'#2E7D32';
-  return React.createElement('div', { style:{display:'inline-flex',alignItems:'center',gap:12,background:'#FAFBFC',border:'1px solid #E8ECF0',borderRadius:10,padding:'10px 14px',marginTop:6,cursor:'pointer',maxWidth:280},
+  return React.createElement('div', { style:{display:'inline-flex',alignItems:'center',gap:12,background:'#FAFBFC',border:'1px solid #E8ECF0',borderRadius:10,padding:'10px 14px',marginTop:6,cursor: preview?'pointer':'default',maxWidth:280,outline:'none'},
+    role: preview ? 'button' : undefined,
+    tabIndex: preview ? 0 : undefined,
+    title: preview ? 'Open full screen' : undefined,
+    onKeyDown: preview ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMediaViewer(preview); } } : undefined,
+    onClick: preview ? () => setMediaViewer(preview) : undefined,
     onMouseEnter:e=>e.currentTarget.style.background='#F3EAF5', onMouseLeave:e=>e.currentTarget.style.background='#FAFBFC' },
     React.createElement('div',{style:{width:36,height:44,background:extColor+'18',border:`1px solid ${extColor}33`,borderRadius:6,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0}},
       React.createElement('span',{style:{fontSize:9,fontWeight:800,color:extColor}},ext),
@@ -73,6 +80,7 @@ function FileCard({ file }) {
 /* ─── Sources card ─── */
 function SourcesCard({ sources, visible }) {
   const I = window.Icons;
+  const { setMediaViewer } = useKobi();
   const [expanded, setExpanded] = useState(false);
   if (!visible || !sources?.length) return null;
   return React.createElement('div', { style:{marginTop:10,background:'#F3EAF5',border:'1px solid #C9A8D0',borderRadius:10,overflow:'hidden',fontSize:13} },
@@ -82,21 +90,45 @@ function SourcesCard({ sources, visible }) {
       React.createElement('span',{style:{marginLeft:'auto',color:'#9BA8B4',display:'flex'}}, I && (expanded ? I.chevronUp(14, '#9BA8B4') : I.chevronDown(14, '#9BA8B4')))
     ),
     expanded && React.createElement('div',{style:{padding:'4px 12px 10px',borderTop:'1px solid #C9A8D0'}},
-      sources.map((s,i)=>React.createElement('div',{key:i,style:{display:'flex',alignItems:'flex-start',gap:8,padding:'4px 0',borderBottom:i<sources.length-1?'1px solid #E2D4E5':'none'}},
+      sources.map((s,i) => {
+        const pv = (window.KobiData && window.KobiData.mediaPreviewForSource) ? window.KobiData.mediaPreviewForSource(s) : null;
+        return React.createElement('div',{
+          key: i,
+          style:{display:'flex',alignItems:'flex-start',gap:8,padding:'4px 0',borderBottom:i<sources.length-1?'1px solid #E2D4E5':'none',cursor: pv ? 'pointer' : 'default',borderRadius:4},
+          role: pv ? 'button' : undefined,
+          tabIndex: pv ? 0 : undefined,
+          title: pv ? 'Open in viewer' : undefined,
+          onKeyDown: pv ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMediaViewer(pv); } } : undefined,
+          onClick: pv ? (e) => { e.stopPropagation(); setMediaViewer(pv); } : undefined,
+        },
         React.createElement('span',{style:{display:'flex',marginTop:1,flexShrink:0}}, s.isNote ? (I && I.brain(15, '#4d0a52')) : (I && I.fileText(15, '#4d0a52'))),
-        React.createElement('div',null,
-          React.createElement('div',{style:{color:'#4d0a52',fontWeight:600,fontSize:12}},s.title),
+        React.createElement('div',{ style: { minWidth: 0, flex: 1 } },
+          React.createElement('div',{ style:{ color:'#4d0a52', fontWeight:600, fontSize:12, textDecoration: pv ? 'underline' : 'none', textDecorationColor:'rgba(77,10,82,0.35)' } }, s.title, pv && ' · View'),
           (s.ref||s.date)&&React.createElement('div',{style:{color:'#8B97A3',fontSize:11}},[s.ref,s.date].filter(Boolean).join(' · '))
         )
-      ))
+        );
+      })
     )
   );
 }
 
 /* ─── Diagram preview ─── */
 function DiagramPreview({ diagram }) {
+  const { setMediaViewer } = useKobi();
   if (!diagram) return null;
+  const openDiagram = () => {
+    setMediaViewer({
+      kind: 'image',
+      src: 'https://picsum.photos/seed/wiring-schematic/1500/900',
+      title: diagram.label || 'Diagram',
+    });
+  };
   return React.createElement('div', { style:{marginTop:8,background:'#EDF1F6',border:'1px solid #CDD5DF',borderRadius:9,padding:'10px 14px',display:'flex',alignItems:'center',gap:10,cursor:'pointer',maxWidth:340},
+    role: 'button',
+    tabIndex: 0,
+    title: 'View full size',
+    onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDiagram(); } },
+    onClick: openDiagram,
     onMouseEnter:e=>e.currentTarget.style.background='#E4ECF4', onMouseLeave:e=>e.currentTarget.style.background='#EDF1F6' },
     React.createElement('div',{style:{width:64,height:42,background:'repeating-linear-gradient(45deg,#CDD5DF,#CDD5DF 2px,#EDF1F6 2px,#EDF1F6 8px)',borderRadius:5}}),
     React.createElement('div',{style:{fontSize:12,color:'#4d0a52',fontWeight:500}},diagram.label)
@@ -129,8 +161,10 @@ function BotMessage({ msg, sourcesVisible }) {
 /* ─── Ingestion card ─── */
 function IngestionCard({ file }) {
   const I = window.Icons;
+  const { setMediaViewer } = useKobi();
   const [phase, setPhase] = useState(file.status==='indexed'?'done':'parsing');
   const [progress, setProgress] = useState(file.status==='indexed'?100:0);
+  const preview = (window.KobiData && window.KobiData.mediaPreviewForFile) ? window.KobiData.mediaPreviewForFile(file) : null;
   useEffect(()=>{
     if(file.status==='indexed') return;
     const t1=setTimeout(()=>{
@@ -139,7 +173,15 @@ function IngestionCard({ file }) {
     },300);
     return ()=>clearTimeout(t1);
   },[]);
-  return React.createElement('div',{style:{background:'#F0F8FF',border:'1px solid #C5D9EE',borderRadius:10,padding:'12px 16px',maxWidth:380}},
+  const openPreview = () => { if (preview) setMediaViewer(preview); };
+  return React.createElement('div',{
+    style:{background:'#F0F8FF',border:'1px solid #C5D9EE',borderRadius:10,padding:'12px 16px',maxWidth:380,cursor: preview ? 'pointer' : 'default',outline:'none'},
+    role: preview ? 'button' : undefined,
+    tabIndex: preview ? 0 : undefined,
+    title: preview ? 'Open document preview' : undefined,
+    onKeyDown: preview ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPreview(); } } : undefined,
+    onClick: preview ? openPreview : undefined,
+  },
     React.createElement('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:8}},
       React.createElement('span',{style:{display:'flex',flexShrink:0}}, I && I.fileText(22, '#1565C0')),
       React.createElement('div',{style:{minWidth:0,flex:1}},
@@ -271,10 +313,14 @@ function TypingIndicator() {
   );
 }
 
+/** Typed into the composer when the user taps the AI shortcut (also matches sendMessage /ask* routing). */
+const ASK_KOBI_AI_PREFIX = '/ask-kobiAI ';
+
 /* ─── Slash popover ─── */
 function SlashPopover({ input, onSelect }) {
   const cmds=[
     {cmd:'/ask',desc:'Ask KobiAI a question',handler:true},
+    {cmd:'/ask-kobiAI',desc:'Ask KobiAI (same as AI button)',handler:true},
     {cmd:'/add-note',desc:'Add a maintenance note',handler:true},
     {cmd:'/incident',desc:'Log a structured incident',handler:true},
     {cmd:'/search',desc:'Search messages and docs',handler:true},
@@ -352,7 +398,11 @@ function Composer({ channelName, onSend, onVoice, voiceActive, input, setInput, 
           placeholder:`Write to #${channelName}`, rows:1,
           style:{flex:1,background:'none',border:'none',outline:'none',resize:'none',fontSize:14,color:'#1A2433',lineHeight:1.6,maxHeight:120,overflow:'auto',fontFamily:'inherit',paddingTop:2}
         }),
-        React.createElement('button',{onClick:onVoice,
+        React.createElement('button',{type:'button',title:'Ask KobiAI',onClick:()=>{setInput(ASK_KOBI_AI_PREFIX);inputRef.current?.focus();},
+          style:{background:'#F3EAF5',border:'none',cursor:'pointer',padding:'6px 8px',borderRadius:8,color:'#4d0a52',transition:'all 0.2s',flexShrink:0,display:'flex',alignItems:'center'}},
+          I&&I.sparkles(18,'#4d0a52')
+        ),
+        React.createElement('button',{type:'button',onClick:onVoice,
           style:{background:voiceActive?'#FEE2E2':'#F3F4F6',border:'none',cursor:'pointer',padding:'6px 8px',borderRadius:8,color:voiceActive?'#E53935':'#6B7280',transition:'all 0.2s',flexShrink:0,display:'flex',alignItems:'center'}},
           I&&I.mic(18,voiceActive?'#E53935':'#6B7280')
         ),
@@ -366,10 +416,85 @@ function Composer({ channelName, onSend, onVoice, voiceActive, input, setInput, 
   );
 }
 
+/* Mattermost does not ship a “breadcrumb” strip: hierarchy is the team sidebar + channel title + optional channel header text.
+   We still add a small trail here for parent → child (machine overview vs chat, overlays). */
+function buildBreadcrumbParts({ t, activeChannel, channel, machine, machineView, rightPanel, setMachineView, setRightPanel }) {
+  const closePanel = () => setRightPanel(null);
+  const goMachineHome = () => { setRightPanel(null); setMachineView('home'); };
+  const parts = [{ key: 'ws', label: t('breadcrumbWorkspace') }];
+
+  if (activeChannel === 'dashboard') {
+    parts.push({ key: 'dash', label: t('dashboard') });
+    return parts;
+  }
+
+  const dm = typeof activeChannel === 'string' && activeChannel.startsWith('dm-') ? activeChannel.slice(3) : null;
+  if (dm) {
+    const u = window.KobiData.users[dm];
+    parts.push({ key: 'dmh', label: t('directMessages') });
+    parts.push({ key: 'dmn', label: u?.name || dm });
+    return parts;
+  }
+
+  if (!channel) return parts;
+
+  parts.push({
+    key: 'ch',
+    label: '#' + channel.name,
+    onClick: rightPanel ? closePanel : undefined,
+  });
+
+  if (machine) {
+    if (machineView === 'home') {
+      parts.push({ key: 'mhome', label: t('machineOverview'), onClick: rightPanel ? closePanel : undefined });
+    } else {
+      parts.push({ key: 'mhome2', label: t('machineOverview'), onClick: goMachineHome });
+      parts.push({ key: 'mchat', label: t('machineChat'), onClick: rightPanel ? closePanel : undefined });
+    }
+  }
+
+  if (rightPanel?.type === 'machine-card') {
+    parts.push({ key: 'panmc', label: t('machineCard') });
+  } else if (rightPanel?.type === 'logbook') {
+    parts.push({ key: 'panlb', label: t('logbook') });
+  } else if (rightPanel?.type === 'knowledge') {
+    parts.push({ key: 'pankn', label: t('knowledgePanel') });
+  }
+
+  return parts;
+}
+
+function BreadcrumbRow({ parts, compact }) {
+  if (!parts || parts.length < 2) return null;
+  return React.createElement('nav', {
+    'aria-label': 'Breadcrumb',
+    style: {
+      fontSize: compact ? 12 : 13,
+      padding: compact ? '8px 12px' : '8px 18px',
+      lineHeight: 1.4,
+      background: '#fff',
+      borderTop: '1px solid #EEF0F2',
+    },
+  },
+    parts.map((p, i) => {
+      const isLast = i === parts.length - 1;
+      const isClickable = Boolean(p.onClick) && !isLast;
+      const child = isClickable
+        ? React.createElement('button', { type: 'button', onClick: p.onClick, style: { background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#5C6370', textDecoration: 'underline', textUnderlineOffset: 2, textDecorationColor: 'rgba(92,99,112,0.5)', font: 'inherit', fontWeight: 500 } }, p.label)
+        : React.createElement('span', { style: { color: isLast ? '#1A2433' : '#9BA8B4', fontWeight: isLast ? 700 : 400 } }, p.label);
+      return React.createElement(React.Fragment, { key: p.key },
+        i > 0 && React.createElement('span', { 'aria-hidden': true, style: { margin: '0 8px', color: '#B0B8C4', fontSize: 11, fontWeight: 400 } }, '>'),
+        child
+      );
+    })
+  );
+}
+
 /* ─── Main ChatView ─── */
 function ChatView() {
   const I = window.Icons;
-  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, setRightPanel, setShowSearchOverlay, t, role } = useKobi();
+  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, rightPanel, setRightPanel, setShowSearchOverlay, t, role, deviceMode } = useKobi();
+  const compact = deviceMode === 'mobile' || deviceMode === 'tablet';
   const { channels, users, machines, botResponses, voicePrefills } = window.KobiData;
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
@@ -450,7 +575,9 @@ function ChatView() {
     if (cmd.cmd==='/add-note') { setInput(''); setShowAddNote(true); return; }
     if (cmd.cmd==='/incident') { setInput(''); setShowIncident(true); return; }
     if (cmd.cmd==='/search') { setInput(''); setShowSearchOverlay(true); return; }
-    setInput(cmd.cmd==='/ ask'?'@kobi ':cmd.cmd+' ');
+    if (cmd.cmd==='/ask') { setInput('@kobi '); inputRef.current?.focus(); return; }
+    if (cmd.cmd==='/ask-kobiAI') { setInput(ASK_KOBI_AI_PREFIX); inputRef.current?.focus(); return; }
+    setInput(cmd.cmd+' ');
     inputRef.current?.focus();
   };
 
@@ -467,7 +594,15 @@ function ChatView() {
   const handleFileDrop = (file) => {
     const sizeMB=(file.size/1048576).toFixed(1);
     const pages=Math.max(1,Math.round(parseFloat(sizeMB)*25));
-    addMessage('docs-drop',{id:Date.now()+'doc',userId:'kobi',time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),isBot:true,isIngestion:true,file:{name:file.name,size:sizeMB,pages,chunks:pages*4,diagrams:Math.round(pages*0.1),machine:'#machine-siemens-s7-1500',status:'parsing'}});
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isImage = file.type.startsWith('image/');
+    let previewUrl;
+    let previewKind;
+    if (isPdf || isImage) {
+      previewUrl = URL.createObjectURL(file);
+      previewKind = isImage ? 'image' : 'pdf';
+    }
+    addMessage('docs-drop',{id:Date.now()+'doc',userId:'kobi',time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),isBot:true,isIngestion:true,file:{name:file.name,size:sizeMB,pages,chunks:pages*4,diagrams:Math.round(pages*0.1),machine:'#machine-siemens-s7-1500',status:'parsing', previewUrl, previewKind }});
     addToast('Document received. Indexing…','info');
   };
 
@@ -496,20 +631,23 @@ function ChatView() {
   const showSlash = input.startsWith('/') && input.length>=1;
   const displayMessages = getDisplayMessages();
 
+  const breadcrumbParts = buildBreadcrumbParts({
+    t, activeChannel, channel, machine, machineView, rightPanel, setMachineView, setRightPanel,
+  });
+
   return React.createElement('div',{style:{flex:1,display:'flex',flexDirection:'column',background:'#fff',minWidth:0,overflow:'hidden'}},
-    // Header
-    React.createElement('div',{style:{height:52,borderBottom:'1px solid #E8ECF0',display:'flex',alignItems:'center',padding:'0 18px',gap:10,flexShrink:0,background:'#fff'}},
-      channel&&React.createElement(React.Fragment,null,
-        React.createElement('span',{style:{display:'flex',flexShrink:0}}, I && I.channelHeaderIcon(channel, 20, '#1A2433')),
-        React.createElement('div',null,
-          React.createElement('div',{style:{fontWeight:700,fontSize:15,color:'#1A2433'}},channel.name),
-          React.createElement('div',{style:{fontSize:11,color:'#9BA8B4'}},`${channel.members} ${t('members')}${channel.purpose?' · '+channel.purpose.slice(0,50):''}`)
-        ),
-        machine&&React.createElement('div',{style:{marginLeft:'auto',display:'flex',gap:8}},
-          machine&&machineView==='chat'&&React.createElement('button',{onClick:()=>setMachineView('home'),style:{padding:'5px 12px',background:'#F3EAF5',border:'1px solid #C9A8D0',borderRadius:7,fontSize:12,color:'#4d0a52',cursor:'pointer',fontWeight:500}},'← Overview'),
-          ...[{label:t('machineCard'),fn:()=>setRightPanel({type:'machine-card',machineId:channel.machineId})},{label:t('logbook'),fn:()=>setRightPanel({type:'logbook'})},{label:t('askKobi'),fn:()=>{setMachineView('chat');setInput('@kobi ');inputRef.current?.focus();}}].map(btn=>React.createElement('button',{key:btn.label,onClick:btn.fn,style:{padding:'5px 12px',background:'#F3EAF5',border:'1px solid #C9A8D0',borderRadius:7,fontSize:12,color:'#4d0a52',cursor:'pointer',fontWeight:500}},btn.label))
+    // Header + breadcrumb (Mattermost-style center column has no crumb trail; we add one for parent → child context)
+    React.createElement('div',{style:{flexShrink:0,background:'#fff',borderBottom:'1px solid #E8ECF0',display:'flex',flexDirection:'column'}},
+      React.createElement('div',{style:{height:'auto',minHeight:52,display:'flex',alignItems:'center',flexWrap:'wrap',rowGap:8,columnGap:10,padding:compact?'8px 12px':'0 18px',gap:10,background:'#fff'}},
+        channel&&React.createElement(React.Fragment,null,
+          React.createElement('span',{style:{display:'flex',flexShrink:0}}, I && I.channelHeaderIcon(channel, 20, '#1A2433')),
+          React.createElement('div',{style:{minWidth:0,flex:'1 1 140px'}},
+            React.createElement('div',{style:{fontWeight:700,fontSize:compact?14:15,color:'#1A2433'}},channel.name),
+            React.createElement('div',{style:{fontSize:11,color:'#9BA8B4',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:compact?'nowrap':'normal',maxWidth:compact?'100%':'none'}},`${channel.members} ${t('members')}${channel.purpose?` · ${channel.purpose.slice(0, compact?36:50)}`:''}`)
+          )
         )
-      )
+      ),
+      React.createElement(BreadcrumbRow,{parts:breadcrumbParts,compact})
     ),
 
     // Content

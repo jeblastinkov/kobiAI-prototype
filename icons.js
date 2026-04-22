@@ -58,6 +58,11 @@ window.Icons = (function() {
     barChart: (sz,col) => svg([l(12,20,12,10), l(18,20,18,4), l(6,20,6,16)], sz, col),
     fileText: (sz,col) => svg([p('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'), pl('14 2 14 8 20 8'), l(16,13,8,13), l(16,17,8,17), l(10,9,8,9)], sz, col),
     inbox: (sz,col) => svg([pl('22 12 16 12 14 15 10 15 8 12 2 12'), p('M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z')], sz, col),
+    /** AI / “ask Kobi” — compact spark burst */
+    sparkles: (sz,col) => svg([
+      p('M12 3v2.5M12 18.5V21M5 12h2.5M16.5 12H19M6.75 6.75l1.75 1.75M15.5 15.5l1.75 1.75M17.25 6.75L15.5 8.5M8.5 15.5l-1.75 1.75'),
+      c(12,12,1.25),
+    ], sz, col, 1.55),
     // Modern mic (Lucide-style capsule + bracket + slim stand)
     mic: (sz,col) => svg([
       p('M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z'),
@@ -86,6 +91,28 @@ window.Icons = (function() {
     chevronUp: (sz,col) => svg([pl('18 15 12 9 6 15')], sz, col),
     upload: (sz,col) => svg([p('M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'), pl('17 8 12 3 7 8'), l(12,3,12,15)], sz, col),
     statusDot: (sz, fill) => svgMixed([ce('circle', { cx: 12, cy: 12, r: 4, fill: fill || '#4CAF50', stroke: 'none' })], sz),
+
+    /** App rail: Teams-style tile (T on rounded card) */
+    intMsTeams: (sz, col) => svg([
+      r(2.5, 2.5, 19, 19, 3.5), p('M7.5 6.5H16.5M12 6.5V16.5')
+    ], sz, col, 1.75),
+    /** CMMS: clipboard + lines (work order) */
+    intCmms: (sz, col) => svg([
+      p('M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'),
+      r(9,2,6,4,1), l(8,12,16,12), l(8,16,16,16), l(8,8,12,8)
+    ], sz, col, 1.5),
+    /** ERP: window + ledger lines */
+    intErp: (sz, col) => svg([
+      r(3,3,18,18,2), l(7,8,17,8), l(7,12,17,12), l(7,16,14,16)
+    ], sz, col, 1.55),
+    /** MES: monitor + trend */
+    intMes: (sz, col) => svg([
+      r(2,3,20,13,1.5), l(4,8,7,5), l(7,5,10,7), l(10,7,12,3), l(12,3,20,2),
+      l(7,20,10,20), l(10,20,10,16), l(10,16,14,16)
+    ], sz, col, 1.45),
+    intPuzzle: (sz, col) => svg([
+      p('M4 7h4a1 1 0 0 0 1-1V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 0 1 1h4a1 1 0 0 1 1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 0-1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2a1 1 0 0 0-1-1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z')
+    ], sz, col, 1.3),
 
     channelHeaderIcon,
   };

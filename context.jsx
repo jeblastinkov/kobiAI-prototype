@@ -16,6 +16,10 @@ function KobiProvider({ children }) {
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
+  /** { kind: 'pdf'|'image', src: string, title: string } | null */
+  const [mediaViewer, setMediaViewer] = useState(null);
+  /** Mattermost-style apps bar: which integration is open in the iframe panel (null = closed) */
+  const [activeIntegrationId, setActiveIntegrationId] = useState(null);
 
   // messages: channelSlug -> Message[]
   const [messages, setMessages] = useState(() => {
@@ -53,6 +57,8 @@ function KobiProvider({ children }) {
     setRole(newRole);
     setActiveChannel(newRole === 'manager' ? 'dashboard' : 'machine-siemens');
     setRightPanel(null);
+    setMediaViewer(null);
+    setActiveIntegrationId(null);
   }, []);
 
   const value = {
@@ -66,6 +72,8 @@ function KobiProvider({ children }) {
     showOnPremModal, setShowOnPremModal,
     showSearchOverlay, setShowSearchOverlay,
     sidebarOpen, setSidebarOpen,
+    mediaViewer, setMediaViewer,
+    activeIntegrationId, setActiveIntegrationId,
     messages, addMessage,
     toasts, addToast,
     t,

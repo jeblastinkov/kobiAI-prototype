@@ -104,16 +104,17 @@ function LogbookPanel({ onClose }) {
 
 function KnowledgePanel({ onClose }) {
   const I = window.Icons;
+  const { setMediaViewer } = useKobi();
   const [activeTab, setActiveTab] = useState('docs');
   const { docs: docsList } = window.KobiData || { docs: [] };
 
   const indexedDocs = [
-    { name: 'Siemens SINAMICS S120 Fault Manual', machine: 'Siemens S7-1500', pages: 247, date: '12 Mar 2026' },
-    { name: 'KUKA System Software KSS 8.6', machine: 'KUKA KR 60-3', pages: 312, date: '5 Feb 2026' },
-    { name: 'Zünd G3 Operator Manual EN', machine: 'Zünd G3', pages: 412, date: '2 days ago' },
-    { name: 'Machine Config Sheet — CNC Line 3', machine: 'Siemens S7-1500', pages: 14, date: '8 Jan 2026' },
-    { name: 'Plant Safety SOP-042', machine: 'All', pages: 38, date: '15 Jan 2026' },
-    { name: 'KUKA KR60 System Manual v4', machine: 'KUKA KR 60-3', pages: 461, date: '3 days ago' },
+    { name: 'Siemens_SINAMICS_S120_FaultManual.pdf', machine: 'Siemens S7-1500', pages: 247, date: '12 Mar 2026' },
+    { name: 'KUKA_Software_KSS_8.6.pdf', machine: 'KUKA KR 60-3', pages: 312, date: '5 Feb 2026' },
+    { name: 'Zund_G3_Operator_Manual_EN.pdf', machine: 'Zünd G3', pages: 412, date: '2 days ago' },
+    { name: 'Machine_Config_CNC_Line3.pdf', machine: 'Siemens S7-1500', pages: 14, date: '8 Jan 2026' },
+    { name: 'Plant_Safety_SOP-042.pdf', machine: 'All', pages: 38, date: '15 Jan 2026' },
+    { name: 'KUKA_KR60_System_Manual_v4.pdf', machine: 'KUKA KR 60-3', pages: 461, date: '3 days ago' },
   ];
 
   const myNotes = [
@@ -148,13 +149,24 @@ function KnowledgePanel({ onClose }) {
       )
     ),
     React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: 12 } },
-      activeTab === 'docs' && indexedDocs.map((doc, i) => React.createElement('div', { key: i, style: { padding: '8px 10px', borderBottom: '1px solid #F0F2F4', display: 'flex', gap: 8 } },
+      activeTab === 'docs' && indexedDocs.map((doc, i) => {
+        const pv = window.KobiData?.mediaPreviewForFile ? window.KobiData.mediaPreviewForFile({ name: doc.name }) : null;
+        return React.createElement('div', {
+          key: i,
+          role: pv ? 'button' : undefined,
+          tabIndex: pv ? 0 : undefined,
+          title: pv ? 'Open in viewer' : undefined,
+          onKeyDown: pv ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMediaViewer(pv); } } : undefined,
+          onClick: pv ? () => setMediaViewer(pv) : undefined,
+          style: { padding: '8px 10px', borderBottom: '1px solid #F0F2F4', display: 'flex', gap: 8, cursor: pv ? 'pointer' : 'default' },
+        },
         React.createElement('span', { style: { display: 'flex', flexShrink: 0 } }, I.fileText(16, '#1E3A5F')),
-        React.createElement('div', { style: { flex: 1 } },
-          React.createElement('div', { style: { fontSize: 13, color: '#1A2433', fontWeight: 500 } }, doc.name),
+        React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+          React.createElement('div', { style: { fontSize: 13, color: '#1A2433', fontWeight: 500, textDecoration: pv ? 'underline' : 'none', textDecorationColor: 'rgba(30,58,95,0.3)' } }, doc.name),
           React.createElement('div', { style: { fontSize: 11, color: '#8B97A3', marginTop: 2 } }, `${doc.machine} · ${doc.pages} pages · ${doc.date}`)
         )
-      )),
+        );
+      }),
       activeTab === 'notes' && myNotes.map((note, i) => React.createElement('div', { key: i, style: { background: '#FFFDF0', border: '1px solid #FFE57F', borderRadius: 8, padding: '10px 12px', marginBottom: 8 } },
         React.createElement('div', { style: { fontSize: 13, color: '#1A2433', marginBottom: 4, lineHeight: 1.5 } }, note.text),
         React.createElement('div', { style: { fontSize: 11, color: '#8B97A3' } }, `${note.machine} · ${note.by} · ${note.date}`)
@@ -170,7 +182,8 @@ function KnowledgePanel({ onClose }) {
 }
 
 function RightPanel() {
-  const { rightPanel, setRightPanel, activeChannel } = useKobi();
+  const { rightPanel, setRightPanel, activeChannel, deviceMode } = useKobi();
+  const compactNav = deviceMode === 'mobile' || deviceMode === 'tablet';
 
   const isDmKobi = activeChannel === 'dm-kobi';
   const show = rightPanel || isDmKobi;
@@ -189,6 +202,33 @@ function RightPanel() {
     content = React.createElement(KnowledgePanel, { onClose: close });
   } else {
     return null;
+  }
+
+  const panelBox = {
+    width: deviceMode === 'mobile' ? '100%' : 320,
+    maxWidth: '100%',
+    height: '100%',
+    flexShrink: 0,
+    borderLeft: '1px solid #E8ECF0',
+    background: '#FAFBFC',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    boxShadow: compactNav ? '-6px 0 28px rgba(0,0,0,0.12)' : 'none',
+  };
+
+  if (compactNav) {
+    return React.createElement('div', {
+      style: { position: 'absolute', inset: 0, zIndex: 85, display: 'flex', flexDirection: 'row', alignItems: 'stretch' },
+    },
+      React.createElement('button', {
+        type: 'button',
+        'aria-label': 'Close panel',
+        onClick: close,
+        style: { flex: 1, minWidth: 0, border: 'none', padding: 0, cursor: 'pointer', background: 'rgba(15,23,42,0.42)' },
+      }),
+      React.createElement('div', { style: panelBox }, content)
+    );
   }
 
   return React.createElement('div', {
