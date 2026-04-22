@@ -42,16 +42,6 @@ function MachineHome({ machineId, onAction }) {
       desc: 'Ask KobiAI — get answers from the manual',
       onClick: () => onAction('ask'),
     },
-    {
-      id: 'chat',
-      icon: I.chat,
-      color: '#4A148C',
-      bg: '#F3E5F5',
-      border: '#CE93D8',
-      label: 'Open Chat',
-      desc: 'See conversation history and send a message',
-      onClick: () => onAction('chat'),
-    },
   ];
 
   return React.createElement('div', {
@@ -135,21 +125,16 @@ function MachineHome({ machineId, onAction }) {
         );
       })
     ),
-
-    // Recent activity hint
-    React.createElement('div', {
-      style: { marginTop: 24, padding: '14px 18px', background: '#fff', borderRadius: 12, border: '1px solid #E4E7EB', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', minWidth: 0 }
-    },
-      I.activity(18, '#9BA8B4'),
-      React.createElement('div', { style: { fontSize: 13, color: '#6B8EAE', flex: '1 1 200px', minWidth: 0 } },
-        `Last incident: `,
-        React.createElement('strong', { style: { color: '#1A2433' } }, machine.lastIncident),
-        ` · ${machine.chunksIndexed.toLocaleString()} knowledge chunks ready`
-      ),
+    // Single text entry to channel thread (no second “Open Chat” bar; no duplicate stats row)
+    React.createElement('div', { style: { marginTop: 4, textAlign: 'center' } },
       React.createElement('button', {
+        type: 'button',
         onClick: () => onAction('chat'),
-        style: { marginLeft: compact ? 0 : 'auto', padding: '6px 14px', background: '#4d0a52', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }
-      }, 'Open Chat →')
+        style: {
+          background: 'none', border: 'none', color: '#4d0a52', fontSize: 14, fontWeight: 600,
+          cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3, padding: '8px 12px',
+        },
+      }, 'View channel messages')
     )
   );
 }

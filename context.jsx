@@ -21,6 +21,8 @@ function KobiProvider({ children }) {
   /** Mattermost-style apps bar: which integration is open in the iframe panel (null = closed) */
   const [activeIntegrationId, setActiveIntegrationId] = useState(null);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState('bratislava');
+  /** Set when opening #docs-drop from a machine’s right panel so we can return + show correct breadcrumbs. */
+  const [channelReturnContext, setChannelReturnContext] = useState(null);
 
   // messages: channelSlug -> Message[]
   const [messages, setMessages] = useState(() => {
@@ -61,6 +63,7 @@ function KobiProvider({ children }) {
     setRightPanel(null);
     setMediaViewer(null);
     setActiveIntegrationId(null);
+    setChannelReturnContext(null);
   }, [activeWorkspaceId]);
 
   const setActiveWorkspace = useCallback((id) => {
@@ -70,6 +73,7 @@ function KobiProvider({ children }) {
     setRightPanel(null);
     setMediaViewer(null);
     setActiveIntegrationId(null);
+    setChannelReturnContext(null);
   }, []);
 
   const value = {
@@ -78,6 +82,7 @@ function KobiProvider({ children }) {
     language, setLanguage,
     deviceMode, setDeviceMode,
     activeChannel, setActiveChannel,
+    channelReturnContext, setChannelReturnContext,
     rightPanel, setRightPanel,
     notesAdded, setNotesAdded,
     openIncidentCount, setOpenIncidentCount,

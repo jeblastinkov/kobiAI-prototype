@@ -3,7 +3,6 @@
 function Sidebar() {
   const { role, activeChannel, setActiveChannel, setShowOnPremModal, setSidebarOpen, setRightPanel, t, activeWorkspaceId } = useKobi();
   const { buildMachineNavEntries } = window.KobiData;
-  const Ws = window.WorkspaceSwitcher;
   const [channelSearch, setChannelSearch] = useState('');
   const [expandedSection, setExpandedSection] = useState({ overview: true, machines: true, channels: true, dms: true });
   const I = window.Icons;
@@ -73,17 +72,9 @@ function Sidebar() {
       background: '#4d0a52', width: 256, flexShrink: 0, overflow: 'hidden',
     }
   },
-    // Header
-    React.createElement('div', { style: { padding: '16px 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.1)' } },
-      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
-        React.createElement('div', { style: { width: 38, height: 38, background: 'rgba(255,255,255,0.15)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 } },
-          React.createElement('span', { style: { color: '#fff', fontWeight: 900, fontSize: 17, letterSpacing: '-0.5px' } }, 'K'),
-          React.createElement('span', { style: { position: 'absolute', bottom: -1, right: -1, width: 10, height: 10, background: '#4CAF50', borderRadius: '50%', border: '2px solid #4d0a52' } })
-        ),
-        Ws && React.createElement(Ws, { variant: 'sidebar' })
-      ),
-      // Search
-      React.createElement('div', { style: { display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: '8px 12px', gap: 8, marginTop: 12 } },
+    // Search (team / site switcher is in the top bar only)
+    React.createElement('div', { style: { padding: '14px 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.1)' } },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: '8px 12px', gap: 8 } },
         I.search(15, MUTED_COLOR),
         React.createElement('input', {
           value: channelSearch,

@@ -3,10 +3,11 @@
 const { useState } = React;
 
 function MachineCardPanel({ machineId, onClose }) {
-  const { setActiveChannel, addToast } = useKobi();
+  const { setActiveChannel, setChannelReturnContext, setRightPanel } = useKobi();
   const machine = window.KobiData.machines[machineId];
   const I = window.Icons;
   if (!machine) return null;
+  const machineChannelSlug = (window.KobiData.channels || []).find((c) => c.machineId === machineId)?.slug;
 
   const statusColor = machine.status === 'online' ? '#4CAF50' : '#FF9800';
   const statusLabel = machine.status === 'online' ? 'Online' : 'Maintenance';
@@ -61,11 +62,30 @@ function MachineCardPanel({ machineId, onClose }) {
       // Actions
       React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
         React.createElement('button', {
-          onClick: () => { setActiveChannel('incidents'); onClose(); },
+          onClick: () => {
+            if (machineChannelSlug) {
+              setActiveChannel(machineChannelSlug);
+              setRightPanel({ type: 'logbook', machineId });
+              // Do not call onClose() here — onClose is setRightPanel(null) and would wipe the logbook we just opened.
+            } else {
+              setActiveChannel('incidents');
+              onClose();
+            }
+          },
           style: { width: '100%', padding: '9px 14px', background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#1E3A5F', textAlign: 'left' }
         }, React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 8 } }, I.alert(16, '#1E3A5F'), 'View all incidents')),
         React.createElement('button', {
-          onClick: () => { setActiveChannel('docs-drop'); onClose(); },
+          onClick: () => {
+            if (machineChannelSlug) {
+              setChannelReturnContext({
+                fromChannelSlug: machineChannelSlug,
+                machineName: machine.name,
+                machineId,
+              });
+            }
+            setActiveChannel('docs-drop');
+            onClose();
+          },
           style: { width: '100%', padding: '9px 14px', background: '#EEF4FB', border: '1px solid #C5D9EE', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#1E3A5F', textAlign: 'left' }
         }, React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 8 } }, I.upload(16, '#1E3A5F'), 'Upload docs'))
       )
@@ -73,19 +93,35 @@ function MachineCardPanel({ machineId, onClose }) {
   );
 }
 
-function LogbookPanel({ onClose }) {
+function incidentMatchesMachine(inc, m) {
+  if (!m) return true;
+  const n = m.name;
+  if (inc.machine === n) return true;
+  if (!inc.machine) return false;
+  if (n.includes(inc.machine) || inc.machine.includes(n.split(' ')[0])) return true;
+  return false;
+}
+
+function LogbookPanel({ onClose, machineId }) {
   const I = window.Icons;
-  const { incidents } = window.KobiData;
+  const { incidents, machines } = window.KobiData;
+  const m = machineId && machines && machines[machineId] ? machines[machineId] : null;
+  const list = m ? incidents.filter((inc) => incidentMatchesMachine(inc, m)) : incidents;
   const statusColors = { resolved: '#4CAF50', 'in-progress': '#FF9800', open: '#F44336', 'awaiting-approval': '#FF9800' };
   const sevColors = { critical: '#F44336', warning: '#FF9800', info: '#2196F3' };
 
   return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
-    React.createElement('div', { style: { padding: '14px 16px', borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
-      React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', display: 'flex', alignItems: 'center', gap: 8 } }, I.clipboardList(18, '#1A2433'), 'Maintenance Logbook'),
-      React.createElement('button', { onClick: onClose, style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 20 } }, '×')
+    React.createElement('div', { style: { padding: '14px 16px', borderBottom: '1px solid #E8ECF0' } },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' } },
+        React.createElement('div', null,
+          React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', display: 'flex', alignItems: 'center', gap: 8 } }, I.clipboardList(18, '#1A2433'), 'Maintenance Logbook'),
+          m && React.createElement('div', { style: { fontSize: 11, color: '#6B8EAE', marginTop: 6, fontWeight: 500, lineHeight: 1.35 } }, 'Showing incidents for: ', React.createElement('strong', { style: { color: '#1A2433' } }, m.name))
+        ),
+        React.createElement('button', { onClick: onClose, style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 20, flexShrink: 0 } }, '×')
+      )
     ),
     React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: 12 } },
-      incidents.map(inc => React.createElement('div', {
+      list.map(inc => React.createElement('div', {
         key: inc.id,
         style: { background: '#fff', border: `1px solid ${sevColors[inc.severity] || '#E4E7EB'}`, borderLeft: `3px solid ${sevColors[inc.severity] || '#E4E7EB'}`, borderRadius: 8, padding: '10px 12px', marginBottom: 8, cursor: 'pointer' },
         onMouseEnter: e => e.currentTarget.style.background = '#F7F9FB',
@@ -197,7 +233,7 @@ function RightPanel() {
   } else if (rightPanel?.type === 'machine-card') {
     content = React.createElement(MachineCardPanel, { machineId: rightPanel.machineId, onClose: close });
   } else if (rightPanel?.type === 'logbook') {
-    content = React.createElement(LogbookPanel, { onClose: close });
+    content = React.createElement(LogbookPanel, { onClose: close, machineId: rightPanel.machineId });
   } else if (rightPanel?.type === 'knowledge') {
     content = React.createElement(KnowledgePanel, { onClose: close });
   } else {

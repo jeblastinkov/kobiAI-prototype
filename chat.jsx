@@ -418,7 +418,7 @@ function Composer({ channelName, onSend, onVoice, voiceActive, input, setInput, 
 
 /* Mattermost does not ship a “breadcrumb” strip: hierarchy is the team sidebar + channel title + optional channel header text.
    We still add a small trail here for parent → child (machine overview vs chat, overlays). */
-function buildBreadcrumbParts({ t, activeChannel, channel, machine, machineView, rightPanel, setMachineView, setRightPanel, activeWorkspaceId }) {
+function buildBreadcrumbParts({ t, activeChannel, channel, machine, machineView, rightPanel, setMachineView, setRightPanel, activeWorkspaceId, channelReturnContext, setChannelReturnContext, setActiveChannel }) {
   const closePanel = () => setRightPanel(null);
   const goMachineHome = () => { setRightPanel(null); setMachineView('home'); };
   const ws = window.KobiData.getWorkspaceById(activeWorkspaceId);
@@ -434,6 +434,30 @@ function buildBreadcrumbParts({ t, activeChannel, channel, machine, machineView,
     const u = window.KobiData.users[dm];
     parts.push({ key: 'dmh', label: t('directMessages') });
     parts.push({ key: 'dmn', label: u?.name || dm });
+    return parts;
+  }
+
+  if (activeChannel === 'docs-drop' && channelReturnContext) {
+    const ctx = channelReturnContext;
+    parts.push({
+      key: 'ctxM',
+      label: ctx.machineName,
+      onClick: () => { setChannelReturnContext(null); setActiveChannel(ctx.fromChannelSlug); },
+    });
+    if (channel) {
+      parts.push({
+        key: 'ch',
+        label: '#' + channel.name,
+        onClick: rightPanel ? closePanel : undefined,
+      });
+    }
+    if (rightPanel?.type === 'machine-card') {
+      parts.push({ key: 'panmc', label: t('machineCard') });
+    } else if (rightPanel?.type === 'logbook') {
+      parts.push({ key: 'panlb', label: t('logbook') });
+    } else if (rightPanel?.type === 'knowledge') {
+      parts.push({ key: 'pankn', label: t('knowledgePanel') });
+    }
     return parts;
   }
 
@@ -494,7 +518,7 @@ function BreadcrumbRow({ parts, compact }) {
 /* ─── Main ChatView ─── */
 function ChatView() {
   const I = window.Icons;
-  const { activeChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, rightPanel, setRightPanel, setShowSearchOverlay, t, role, deviceMode, activeWorkspaceId } = useKobi();
+  const { activeChannel, setActiveChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, rightPanel, setRightPanel, setShowSearchOverlay, t, role, deviceMode, activeWorkspaceId, channelReturnContext, setChannelReturnContext } = useKobi();
   const compact = deviceMode === 'mobile' || deviceMode === 'tablet';
   const { channels, users, machines, botResponses, voicePrefills } = window.KobiData;
   const [input, setInput] = useState('');
@@ -512,6 +536,9 @@ function ChatView() {
   const machine = channel?.machineId ? machines[channel.machineId] : null;
 
   useEffect(() => { if (channel?.machineId) setMachineView('home'); }, [activeChannel]);
+  useEffect(() => {
+    if (activeChannel !== 'docs-drop' && setChannelReturnContext) setChannelReturnContext(null);
+  }, [activeChannel, setChannelReturnContext]);
   useEffect(() => {
     if (msgEndRef.current?.parentElement) { const p=msgEndRef.current.parentElement; p.scrollTop=p.scrollHeight; }
   }, [channelMessages.length, typing]);
@@ -603,7 +630,10 @@ function ChatView() {
       previewUrl = URL.createObjectURL(file);
       previewKind = isImage ? 'image' : 'pdf';
     }
-    addMessage('docs-drop',{id:Date.now()+'doc',userId:'kobi',time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),isBot:true,isIngestion:true,file:{name:file.name,size:sizeMB,pages,chunks:pages*4,diagrams:Math.round(pages*0.1),machine:'#machine-siemens-s7-1500',status:'parsing', previewUrl, previewKind }});
+    const returnCh = channelReturnContext && channelReturnContext.fromChannelSlug;
+    const tagCh = returnCh ? channels.find((c) => c.slug === returnCh) : null;
+    const machineTag = tagCh ? `#${tagCh.name}` : '#machine-siemens-s7-1500';
+    addMessage('docs-drop',{id:Date.now()+'doc',userId:'kobi',time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),isBot:true,isIngestion:true,file:{name:file.name,size:sizeMB,pages,chunks:pages*4,diagrams:Math.round(pages*0.1),machine:machineTag,status:'parsing', previewUrl, previewKind }});
     addToast('Document received. Indexing…','info');
   };
 
@@ -629,11 +659,14 @@ function ChatView() {
 
   const isDashboard = activeChannel==='dashboard';
   const isDocsChannel = activeChannel==='docs-drop';
+  /** On machine channels, show the thread + composer only after “View channel messages” / Get Help / Report Incident (chat view). */
+  const showMachineChannelThread = !machine || machineView === 'chat';
   const showSlash = input.startsWith('/') && input.length>=1;
   const displayMessages = getDisplayMessages();
 
   const breadcrumbParts = buildBreadcrumbParts({
     t, activeChannel, channel, machine, machineView, rightPanel, setMachineView, setRightPanel, activeWorkspaceId,
+    channelReturnContext, setChannelReturnContext, setActiveChannel,
   });
 
   return React.createElement('div',{style:{flex:1,display:'flex',flexDirection:'column',background:'#fff',minWidth:0,overflow:'hidden'}},
@@ -648,28 +681,39 @@ function ChatView() {
           )
         )
       ),
-      React.createElement(BreadcrumbRow,{parts:breadcrumbParts,compact})
+      React.createElement(BreadcrumbRow,{parts:breadcrumbParts,compact}),
+      isDocsChannel && channelReturnContext && React.createElement('div', {
+        style: { padding: '8px 18px', background: '#F3EAF5', borderBottom: '1px solid #E8D4ED', fontSize: 12, color: '#4A1942', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' },
+      },
+        React.createElement('span', null, 'Uploading in context of ', React.createElement('strong', null, channelReturnContext.machineName), ' — documents will be tagged for that line.'),
+        React.createElement('button', {
+          type: 'button',
+          onClick: () => { setChannelReturnContext(null); setActiveChannel(channelReturnContext.fromChannelSlug); },
+          style: { background: '#4d0a52', border: 'none', color: '#fff', fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 8, cursor: 'pointer', flexShrink: 0 },
+        }, 'Back to machine channel')
+      )
     ),
 
-    // Content: optional dashboard / machine landing, then the channel thread (always) so the composer is never “to nowhere”
+    // Content: optional dashboard / machine home card; thread + composer only when not on machine home (user opened chat / help / incident)
     React.createElement('div',{style:{flex:1,minHeight:0,overflowY:'auto'}},
       isDashboard&&React.createElement(window.DashboardView||'div',null),
       machine&&machineView==='home'&&channel&&React.createElement(window.MachineHome,{machineId:channel.machineId,onAction:handleMachineAction}),
-      (isDashboard||(machine&&machineView==='home'))&&React.createElement('div',{
-        style:{borderTop:'1px solid #E8ECF0',background:'#F5F6F8',padding:'8px 18px',fontSize:10,fontWeight:800,color:'#8B97A3',textTransform:'uppercase',letterSpacing:'0.08em'}
-      },t('channelMessages')),
-      isDocsChannel&&React.createElement(DocsDropZone,{onDrop:handleFileDrop}),
-      displayMessages.map((msg,i)=>{
-        const prev=displayMessages[i-1];
-        const grouped=prev&&prev.userId===msg.userId&&!msg.isIncidentCard&&!prev.isIncidentCard&&!msg.isDivider;
-        return React.createElement(Message,{key:msg.id,msg,isGrouped:grouped});
-      }),
-      typing&&React.createElement(TypingIndicator),
-      React.createElement('div',{ref:msgEndRef})
+      showMachineChannelThread&&React.createElement(React.Fragment,null,
+        React.createElement('div',{
+          style:{borderTop:'1px solid #E8ECF0',background:'#F5F6F8',padding:'8px 18px',fontSize:10,fontWeight:800,color:'#8B97A3',textTransform:'uppercase',letterSpacing:'0.08em'}
+        },t('channelMessages')),
+        isDocsChannel&&React.createElement(DocsDropZone,{onDrop:handleFileDrop}),
+        displayMessages.map((msg,i)=>{
+          const prev=displayMessages[i-1];
+          const grouped=prev&&prev.userId===msg.userId&&!msg.isIncidentCard&&!prev.isIncidentCard&&!msg.isDivider;
+          return React.createElement(Message,{key:msg.id,msg,isGrouped:grouped});
+        }),
+        typing&&React.createElement(TypingIndicator),
+        React.createElement('div',{ref:msgEndRef})
+      )
     ),
 
-    // Composer — always available (Mattermost-style: type from any “screen” in the main column)
-    React.createElement(Composer,{channelName:channel?.name||activeChannel,onSend:handleSend,onVoice:handleVoice,voiceActive,input,setInput,onSlashSelect:handleSlashSelect,inputRef,showSlash}),
+    showMachineChannelThread&&React.createElement(Composer,{channelName:channel?.name||activeChannel,onSend:handleSend,onVoice:handleVoice,voiceActive,input,setInput,onSlashSelect:handleSlashSelect,inputRef,showSlash}),
 
     showAddNote&&React.createElement(window.AddNoteDialog,{machine,onSave:handleNoteSubmit,onClose:()=>setShowAddNote(false)}),
     showIncident&&React.createElement(window.IncidentDialog,{machine,onSubmit:handleIncidentSubmit,onClose:()=>setShowIncident(false)})
