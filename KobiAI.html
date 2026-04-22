@@ -463,6 +463,7 @@ const i18n = {
     resetDemo: 'Reset Demo',
     breadcrumbWorkspace: 'Bratislava Plant',
     knowledgePanel: 'Knowledge',
+    channelMessages: 'Channel messages',
   },
   sk: {
     findChannel: 'Hľadať kanál',
@@ -505,6 +506,7 @@ const i18n = {
     resetDemo: 'Resetovať demo',
     breadcrumbWorkspace: 'Závod Bratislava',
     knowledgePanel: 'Znalosti',
+    channelMessages: 'Správy v kanáli',
   },
   de: {
     findChannel: 'Kanal suchen',
@@ -2276,26 +2278,24 @@ function ChatView() {
       React.createElement(KobiBreadcrumbRow, { parts: breadcrumbParts, compact })
     ),
 
-    // Messages area
-    React.createElement('div', {
-      style: { flex: 1, overflowY: 'auto', padding: '12px 0' }
-    },
-      isDashboard
-        ? React.createElement(window.DashboardView || 'div', null)
-        : React.createElement(React.Fragment, null,
-            isDocsChannel && React.createElement(DocsDropZone, { onDrop: handleFileDrop }),
-            displayMessages.map((msg, i) => {
-              const prev = displayMessages[i-1];
-              const isGrouped = prev && prev.userId === msg.userId && !msg.isIncidentCard && !prev.isIncidentCard;
-              return React.createElement(Message, { key: msg.id, msg, isGrouped });
-            }),
-            typing && React.createElement(TypingIndicator),
-            React.createElement('div', { ref: msgEndRef })
-          )
+    // Dashboard + thread (composer always has a visible thread on dashboard)
+    React.createElement('div', { style: { flex: 1, minHeight: 0, overflowY: 'auto' } },
+      isDashboard && React.createElement(window.DashboardView || 'div', null),
+      isDashboard && React.createElement('div', {
+        style: { borderTop: '1px solid #E8ECF0', background: '#F5F6F8', padding: '8px 18px', fontSize: 10, fontWeight: 800, color: '#8B97A3', textTransform: 'uppercase', letterSpacing: '0.08em' }
+      }, t('channelMessages')),
+      isDocsChannel && React.createElement(DocsDropZone, { onDrop: handleFileDrop }),
+      displayMessages.map((msg, i) => {
+        const prev = displayMessages[i-1];
+        const isGrouped = prev && prev.userId === msg.userId && !msg.isIncidentCard && !prev.isIncidentCard;
+        return React.createElement(Message, { key: msg.id, msg, isGrouped });
+      }),
+      typing && React.createElement(TypingIndicator),
+      React.createElement('div', { ref: msgEndRef })
     ),
 
-    // Composer
-    !isDashboard && React.createElement('div', {
+    // Composer (always shown — including on dashboard)
+    React.createElement('div', {
       style: { borderTop: '1px solid #E8ECF0', padding: '10px 16px 12px', background: '#fff', flexShrink: 0, position: 'relative' }
     },
       showSlash && React.createElement(SlashPopover, { input, onSelect: handleSlashSelect }),

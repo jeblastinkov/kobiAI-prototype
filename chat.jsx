@@ -650,25 +650,25 @@ function ChatView() {
       React.createElement(BreadcrumbRow,{parts:breadcrumbParts,compact})
     ),
 
-    // Content
-    machine && machineView==='home'
-      ? React.createElement(window.MachineHome,{machineId:channel.machineId,onAction:handleMachineAction})
-      : React.createElement('div',{style:{flex:1,overflowY:'auto',padding:'8px 0'}},
-          isDashboard ? React.createElement(window.DashboardView||'div',null)
-            : React.createElement(React.Fragment,null,
-                isDocsChannel&&React.createElement(DocsDropZone,{onDrop:handleFileDrop}),
-                displayMessages.map((msg,i)=>{
-                  const prev=displayMessages[i-1];
-                  const grouped=prev&&prev.userId===msg.userId&&!msg.isIncidentCard&&!prev.isIncidentCard&&!msg.isDivider;
-                  return React.createElement(Message,{key:msg.id,msg,isGrouped:grouped});
-                }),
-                typing&&React.createElement(TypingIndicator),
-                React.createElement('div',{ref:msgEndRef})
-              )
-        ),
+    // Content: optional dashboard / machine landing, then the channel thread (always) so the composer is never “to nowhere”
+    React.createElement('div',{style:{flex:1,minHeight:0,overflowY:'auto'}},
+      isDashboard&&React.createElement(window.DashboardView||'div',null),
+      machine&&machineView==='home'&&channel&&React.createElement(window.MachineHome,{machineId:channel.machineId,onAction:handleMachineAction}),
+      (isDashboard||(machine&&machineView==='home'))&&React.createElement('div',{
+        style:{borderTop:'1px solid #E8ECF0',background:'#F5F6F8',padding:'8px 18px',fontSize:10,fontWeight:800,color:'#8B97A3',textTransform:'uppercase',letterSpacing:'0.08em'}
+      },t('channelMessages')),
+      isDocsChannel&&React.createElement(DocsDropZone,{onDrop:handleFileDrop}),
+      displayMessages.map((msg,i)=>{
+        const prev=displayMessages[i-1];
+        const grouped=prev&&prev.userId===msg.userId&&!msg.isIncidentCard&&!prev.isIncidentCard&&!msg.isDivider;
+        return React.createElement(Message,{key:msg.id,msg,isGrouped:grouped});
+      }),
+      typing&&React.createElement(TypingIndicator),
+      React.createElement('div',{ref:msgEndRef})
+    ),
 
-    // Composer
-    !(isDashboard||(machine&&machineView==='home'))&&React.createElement(Composer,{channelName:channel?.name||activeChannel,onSend:handleSend,onVoice:handleVoice,voiceActive,input,setInput,onSlashSelect:handleSlashSelect,inputRef,showSlash}),
+    // Composer — always available (Mattermost-style: type from any “screen” in the main column)
+    React.createElement(Composer,{channelName:channel?.name||activeChannel,onSend:handleSend,onVoice:handleVoice,voiceActive,input,setInput,onSlashSelect:handleSlashSelect,inputRef,showSlash}),
 
     showAddNote&&React.createElement(window.AddNoteDialog,{machine,onSave:handleNoteSubmit,onClose:()=>setShowAddNote(false)}),
     showIncident&&React.createElement(window.IncidentDialog,{machine,onSubmit:handleIncidentSubmit,onClose:()=>setShowIncident(false)})

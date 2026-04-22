@@ -448,6 +448,7 @@ const i18n = {
     intKobi: 'Kobi AI',
     intKobiDesc: 'In-app Kobi direct message and knowledge panel (native, not an iframe).',
     intEmbedHint: 'In production, each tile opens your SSO iframe URL — same app-bar pattern as Mattermost.',
+    channelMessages: 'Channel messages',
   },
   sk: {
     findChannel: 'Hľadať kanál',
@@ -504,6 +505,7 @@ const i18n = {
     intKobi: 'Kobi AI',
     intKobiDesc: 'Priama správa a znalostný panel (natívne).',
     intEmbedHint: 'V produkcii otvoríte SSO URL v iframe, ako u Mattermost.',
+    channelMessages: 'Správy v kanáli',
   },
   de: {
     findChannel: 'Kanal suchen',
