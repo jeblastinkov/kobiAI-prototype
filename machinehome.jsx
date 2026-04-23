@@ -19,8 +19,8 @@ function MachineHome({ machineId, onAction }) {
       bg: '#E3F2FD',
       border: '#90CAF9',
       label: 'Machine Status',
-      desc: 'View live status, specs and indexed knowledge',
-      onClick: () => setRightPanel({ type: 'machine-card', machineId }),
+      desc: 'OEE, utilization trend, live signals and recent incidents',
+      onClick: () => setRightPanel({ type: 'machine-status', machineId }),
     },
     {
       id: 'incident',

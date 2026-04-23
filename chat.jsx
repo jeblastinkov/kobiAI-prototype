@@ -451,12 +451,16 @@ function buildBreadcrumbParts({ t, activeChannel, channel, machine, machineView,
         onClick: rightPanel ? closePanel : undefined,
       });
     }
-    if (rightPanel?.type === 'machine-card') {
+    if (rightPanel?.type === 'machine-status') {
+      parts.push({ key: 'panms', label: t('machineStatus') });
+    } else if (rightPanel?.type === 'machine-card') {
       parts.push({ key: 'panmc', label: t('machineCard') });
     } else if (rightPanel?.type === 'logbook') {
       parts.push({ key: 'panlb', label: t('logbook') });
     } else if (rightPanel?.type === 'knowledge') {
       parts.push({ key: 'pankn', label: t('knowledgePanel') });
+    } else if (rightPanel?.type === 'incident') {
+      parts.push({ key: 'panin', label: t('incident') });
     }
     return parts;
   }
@@ -478,12 +482,16 @@ function buildBreadcrumbParts({ t, activeChannel, channel, machine, machineView,
     }
   }
 
-  if (rightPanel?.type === 'machine-card') {
+  if (rightPanel?.type === 'machine-status') {
+    parts.push({ key: 'panms', label: t('machineStatus') });
+  } else if (rightPanel?.type === 'machine-card') {
     parts.push({ key: 'panmc', label: t('machineCard') });
   } else if (rightPanel?.type === 'logbook') {
     parts.push({ key: 'panlb', label: t('logbook') });
   } else if (rightPanel?.type === 'knowledge') {
     parts.push({ key: 'pankn', label: t('knowledgePanel') });
+  } else if (rightPanel?.type === 'incident') {
+    parts.push({ key: 'panin', label: t('incident') });
   }
 
   return parts;
@@ -518,14 +526,14 @@ function BreadcrumbRow({ parts, compact }) {
 /* ─── Main ChatView ─── */
 function ChatView() {
   const I = window.Icons;
-  const { activeChannel, setActiveChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, openIncidentCount, setOpenIncidentCount, rightPanel, setRightPanel, setShowSearchOverlay, t, role, deviceMode, activeWorkspaceId, channelReturnContext, setChannelReturnContext } = useKobi();
+  const { activeChannel, setActiveChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, rightPanel, setRightPanel, setShowSearchOverlay, t, role, deviceMode, activeWorkspaceId, channelReturnContext, setChannelReturnContext } = useKobi();
   const compact = deviceMode === 'mobile' || deviceMode === 'tablet';
   const { channels, users, machines, botResponses, voicePrefills } = window.KobiData;
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const [voiceActive, setVoiceActive] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
-  const [showIncident, setShowIncident] = useState(false);
+  /** Machine channels: 'home' = dashboard cards only; 'chat' = channel messages + composer. */
   const [machineView, setMachineView] = useState('home');
   const msgEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -535,10 +543,12 @@ function ChatView() {
   const channelMessages = messages[activeChannel] || [];
   const machine = channel?.machineId ? machines[channel.machineId] : null;
 
-  useEffect(() => { if (channel?.machineId) setMachineView('home'); }, [activeChannel]);
   useEffect(() => {
     if (activeChannel !== 'docs-drop' && setChannelReturnContext) setChannelReturnContext(null);
   }, [activeChannel, setChannelReturnContext]);
+  useEffect(() => {
+    setMachineView('home');
+  }, [activeChannel]);
   useEffect(() => {
     if (msgEndRef.current?.parentElement) { const p=msgEndRef.current.parentElement; p.scrollTop=p.scrollHeight; }
   }, [channelMessages.length, typing]);
@@ -593,7 +603,7 @@ function ChatView() {
     const text = input.trim();
     if (!text) return;
     if (text==='/add-note') { setInput(''); setShowAddNote(true); return; }
-    if (text==='/incident') { setInput(''); setShowIncident(true); return; }
+    if (text==='/incident') { setInput(''); setRightPanel({ type: 'incident', machineId: channel?.machineId || null }); return; }
     if (text==='/search' || text.startsWith('/search ')) { setInput(''); setShowSearchOverlay(true); return; }
     sendMessage(text);
   };
@@ -601,7 +611,7 @@ function ChatView() {
   const handleSlashSelect = (cmd) => {
     if (!cmd.handler) { addToast('Coming in production 🚀','info'); setInput(''); return; }
     if (cmd.cmd==='/add-note') { setInput(''); setShowAddNote(true); return; }
-    if (cmd.cmd==='/incident') { setInput(''); setShowIncident(true); return; }
+    if (cmd.cmd==='/incident') { setInput(''); setRightPanel({ type: 'incident', machineId: channel?.machineId || null }); return; }
     if (cmd.cmd==='/search') { setInput(''); setShowSearchOverlay(true); return; }
     if (cmd.cmd==='/ask') { setInput('@kobi '); inputRef.current?.focus(); return; }
     if (cmd.cmd==='/ask-kobiAI') { setInput(ASK_KOBI_AI_PREFIX); inputRef.current?.focus(); return; }
@@ -638,9 +648,15 @@ function ChatView() {
   };
 
   const handleMachineAction = (action) => {
-    if (action==='chat') { setMachineView('chat'); }
-    else if (action==='ask') { setMachineView('chat'); setTimeout(()=>{ setInput('@kobi '); inputRef.current?.focus(); },60); }
-    else if (action==='incident') { setMachineView('chat'); setTimeout(()=>setShowIncident(true),60); }
+    if (action === 'chat') {
+      setMachineView('chat');
+      setTimeout(() => { msgEndRef.current?.scrollIntoView({ behavior: 'smooth' }); inputRef.current?.focus(); }, 0);
+    } else if (action === 'ask') {
+      setMachineView('chat');
+      setTimeout(() => { setInput('@kobi '); inputRef.current?.focus(); msgEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 60);
+    } else if (action === 'incident') {
+      setRightPanel({ type: 'incident', machineId: channel.machineId });
+    }
   };
 
   const handleNoteSubmit = (note) => {
@@ -649,18 +665,9 @@ function ChatView() {
     addMessage(activeChannel,{id:Date.now()+'note',userId:'kobi',time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),isBot:true,markdown:`🧠 **New knowledge added by @${userId}** — *just now*\n_"${note.text}"_\nCategory: ${note.category} · Severity: ${note.severity} · Indexed in 2.1s · Now searchable.`,sources:[]});
   };
 
-  const handleIncidentSubmit = (inc) => {
-    setShowIncident(false); setOpenIncidentCount(n=>n+1); addToast(t('incidentSubmitted'));
-    const userId=role==='manager'?'martin':'jozef';
-    const incId=`INC-2026-0${490+Math.floor(Math.random()*10)}`;
-    addMessage(activeChannel,{id:Date.now()+'inc',userId:'kobi',time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),isBot:true,markdown:`🚨 **Incident ${incId} opened by @${userId}**\nMachine: ${machine?.name||'Machine'} · Severity: ${inc.severity} · Status: **Awaiting approval**\n_"${inc.description}"_\n*View in Logbook →*`,sources:[]});
-    addMessage('incidents',{id:Date.now()+'incc',isIncidentCard:true,incident:{id:incId,machine:machine?.name||'Machine',issue:(inc.description||'').slice(0,40)+'…',severity:inc.severity,status:'awaiting-approval',openedBy:userId,opened:'just now',notes:inc.description,resolution:inc.resolution}});
-  };
-
   const isDashboard = activeChannel==='dashboard';
   const isDocsChannel = activeChannel==='docs-drop';
-  /** On machine channels, show the thread + composer only after “View channel messages” / Get Help / Report Incident (chat view). */
-  const showMachineChannelThread = !machine || machineView === 'chat';
+  const showMachineChannelThread = !isDashboard && (!machine || machineView === 'chat');
   const showSlash = input.startsWith('/') && input.length>=1;
   const displayMessages = getDisplayMessages();
 
@@ -694,14 +701,11 @@ function ChatView() {
       )
     ),
 
-    // Content: optional dashboard / machine home card; thread + composer only when not on machine home (user opened chat / help / incident)
-    React.createElement('div',{style:{flex:1,minHeight:0,overflowY:'auto'}},
+    // Content: dashboard; machine channel = overview only until user opens chat; other channels = thread
+    React.createElement('div',{style:{flex:1,minHeight:0,overflow:'auto',display:'flex',flexDirection:'column'}},
       isDashboard&&React.createElement(window.DashboardView||'div',null),
-      machine&&machineView==='home'&&channel&&React.createElement(window.MachineHome,{machineId:channel.machineId,onAction:handleMachineAction}),
-      showMachineChannelThread&&React.createElement(React.Fragment,null,
-        React.createElement('div',{
-          style:{borderTop:'1px solid #E8ECF0',background:'#F5F6F8',padding:'8px 18px',fontSize:10,fontWeight:800,color:'#8B97A3',textTransform:'uppercase',letterSpacing:'0.08em'}
-        },t('channelMessages')),
+      machine && channel && machineView === 'home' && React.createElement(window.MachineHome,{machineId:channel.machineId,onAction:handleMachineAction}),
+      showMachineChannelThread&&React.createElement('div',{style:machine&&machineView==='chat'?{borderTop:'1px solid #E8ECF0',flex:1,minHeight:0}:undefined},
         isDocsChannel&&React.createElement(DocsDropZone,{onDrop:handleFileDrop}),
         displayMessages.map((msg,i)=>{
           const prev=displayMessages[i-1];
@@ -715,8 +719,7 @@ function ChatView() {
 
     showMachineChannelThread&&React.createElement(Composer,{channelName:channel?.name||activeChannel,onSend:handleSend,onVoice:handleVoice,voiceActive,input,setInput,onSlashSelect:handleSlashSelect,inputRef,showSlash}),
 
-    showAddNote&&React.createElement(window.AddNoteDialog,{machine,onSave:handleNoteSubmit,onClose:()=>setShowAddNote(false)}),
-    showIncident&&React.createElement(window.IncidentDialog,{machine,onSubmit:handleIncidentSubmit,onClose:()=>setShowIncident(false)})
+    showAddNote&&React.createElement(window.AddNoteDialog,{machine,onSave:handleNoteSubmit,onClose:()=>setShowAddNote(false)})
   );
 }
 

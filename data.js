@@ -50,6 +50,66 @@ const machines = {
   },
 };
 
+/** Demo telemetry for Machine Status right panel (fictional). */
+const machineOperational = {
+  siemens: {
+    kpis: [
+      { label: 'OEE', value: '84', unit: '%' },
+      { label: 'Availability', value: '96', unit: '%' },
+      { label: 'Active alarms', value: '0', unit: '' },
+      { label: 'Shift runtime', value: '6.2', unit: 'h' },
+    ],
+    trendUtilization: [
+      { day: 'Mon', pct: 76 }, { day: 'Tue', pct: 81 }, { day: 'Wed', pct: 79 }, { day: 'Thu', pct: 85 },
+      { day: 'Fri', pct: 88 }, { day: 'Sat', pct: 72 }, { day: 'Sun', pct: 68 },
+    ],
+    signals: [
+      { time: '09:42', tag: 'NC.Program', value: 'OP4321', state: 'ok' },
+      { time: '09:40', tag: 'Drive.Temp', value: '41 °C', state: 'ok' },
+      { time: '09:38', tag: 'Spindle.Load', value: '78%', state: 'ok' },
+      { time: '09:35', tag: 'Axes.Following', value: '< 2 µm', state: 'ok' },
+      { time: '09:12', tag: 'Coolant.Flow', value: '12 L/min', state: 'ok' },
+    ],
+  },
+  kuka: {
+    kpis: [
+      { label: 'OEE', value: '52', unit: '%' },
+      { label: 'Availability', value: '71', unit: '%' },
+      { label: 'Active alarms', value: '3', unit: '' },
+      { label: 'Last stop', value: '2h ago', unit: '' },
+    ],
+    trendUtilization: [
+      { day: 'Mon', pct: 72 }, { day: 'Tue', pct: 68 }, { day: 'Wed', pct: 45 }, { day: 'Thu', pct: 38 },
+      { day: 'Fri', pct: 55 }, { day: 'Sat', pct: 40 }, { day: 'Sun', pct: 35 },
+    ],
+    signals: [
+      { time: '09:41', tag: 'Safety.Circuit', value: 'RESET req.', state: 'warn' },
+      { time: '09:39', tag: 'TCP.Deviation', value: '0.9 mm', state: 'warn' },
+      { time: '09:36', tag: 'Arc.Voltage', value: '24.1 V', state: 'ok' },
+      { time: '09:30', tag: 'Gun.Wear', value: 'Elevated', state: 'warn' },
+      { time: '08:55', tag: 'Cycle.Count', value: '12 044', state: 'ok' },
+    ],
+  },
+  zund: {
+    kpis: [
+      { label: 'OEE', value: '79', unit: '%' },
+      { label: 'Availability', value: '94', unit: '%' },
+      { label: 'Active alarms', value: '1', unit: '' },
+      { label: 'Zone 3 vacuum', value: '−71', unit: ' kPa' },
+    ],
+    trendUtilization: [
+      { day: 'Mon', pct: 74 }, { day: 'Tue', pct: 77 }, { day: 'Wed', pct: 80 }, { day: 'Thu', pct: 82 },
+      { day: 'Fri', pct: 78 }, { day: 'Sat', pct: 65 }, { day: 'Sun', pct: 60 },
+    ],
+    signals: [
+      { time: '09:43', tag: 'Zone3.Vacuum', value: '−71 kPa', state: 'ok' },
+      { time: '09:40', tag: 'Z2.Lift', value: '−3 mm', state: 'ok' },
+      { time: '09:15', tag: 'Conv.Speed', value: '8.2 m/min', state: 'ok' },
+      { time: '08:50', tag: 'Knife.Wear', value: 'Replace soon', state: 'warn' },
+    ],
+  },
+};
+
 /** Plants / lines: same machine channels, different order & labels per site (demo). */
 const workspaces = [
   {
@@ -614,6 +674,11 @@ const i18n = {
     technician: 'Technician',
     manager: 'Manager',
     machineCard: 'Machine Card',
+    machineStatus: 'Machine Status',
+    statusUtilizationTrend: 'Utilization (7 days)',
+    statusLiveSignals: 'Live signals',
+    statusRecentIncidents: 'Recent incidents',
+    assetProfile: 'Asset profile',
     logbook: 'Logbook',
     askKobi: 'Ask Kobi',
     members: 'members',
@@ -689,6 +754,11 @@ const i18n = {
     technician: 'Technik',
     manager: 'Manažér',
     machineCard: 'Karta stroja',
+    machineStatus: 'Stav stroja',
+    statusUtilizationTrend: 'Využitie (7 dní)',
+    statusLiveSignals: 'Signály v reálnom čase',
+    statusRecentIncidents: 'Nedávne incidenty',
+    assetProfile: 'Profil aktíva',
     logbook: 'Logbook',
     askKobi: 'Opýtať Kobi',
     members: 'členov',
@@ -843,7 +913,7 @@ function mediaPreviewForSource(s) {
 }
 
 return {
-  users, channels, machines, workspaces, integrationApps, conversations, incidents, dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine, predictiveAlerts, botResponses, voicePrefills, i18n,
+  users, channels, machines, machineOperational, workspaces, integrationApps, conversations, incidents, dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine, predictiveAlerts, botResponses, voicePrefills, i18n,
   getWorkspaceById, getFirstMachineSlugForWorkspace, buildMachineNavEntries,
   DEMO_PDF_URL, mediaPreviewForFile, mediaPreviewForSource,
 };

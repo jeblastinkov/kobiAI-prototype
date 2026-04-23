@@ -114,9 +114,9 @@ function AddNoteDialog({ machine, onSave, onClose }) {
   );
 }
 
-/* ─── Incident dialog — Run-details style ─── */
+/* ─── Incident form (shared: modal + right slide panel) ─── */
 
-function IncidentDialog({ machine, onSubmit, onClose }) {
+function IncidentFormContent({ machine, onSubmit, onClose }) {
   const { t, role } = useKobi();
   const I = window.Icons;
   const [tab, setTab] = useState('details');
@@ -144,14 +144,7 @@ function IncidentDialog({ machine, onSubmit, onClose }) {
     {initials:'JN',color:'#2E7D32'},{initials:'MH',color:'#1565C0'},{initials:'PK',color:'#6A1B9A'}
   ];
 
-  return React.createElement(Modal, { title: React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } }, I && I.alert(20, '#E53935'), 'Log Incident'), subtitle:'Structured maintenance record · auto-posts to #incidents', width:700, onClose,
-    footer: React.createElement(React.Fragment, null,
-      React.createElement('div', { style:{fontSize:12,color:'#9BA8B4',marginRight:'auto'} }, `${doneTasks}/${tasks.length} tasks checked`),
-      React.createElement('button', { onClick:onClose, style:{padding:'9px 18px',border:'1px solid #C5D0DB',borderRadius:9,background:'#fff',cursor:'pointer',fontSize:13,color:'#555'} }, 'Save draft'),
-      React.createElement('button', { onClick:()=>{ if(form.description.trim()) onSubmit(form); }, disabled:!form.description.trim(),
-        style:{padding:'9px 24px',background:form.description.trim()?'#E53935':'#C5D0DB',border:'none',borderRadius:9,color:'#fff',fontWeight:700,cursor:form.description.trim()?'pointer':'default',fontSize:13} }, t('submit'))
-    )
-  },
+  return React.createElement('div', { style: { minWidth: 0 } },
     /* Owner + Participants row */
     React.createElement('div', { style:{display:'flex',gap:24,marginBottom:20,padding:'14px 16px',background:'#F7F9FB',borderRadius:12,border:'1px solid #EBEEF2'} },
       React.createElement('div', null,
@@ -257,8 +250,139 @@ function IncidentDialog({ machine, onSubmit, onClose }) {
             style:{padding:'7px 14px',border:'1.5px dashed #C5D0DB',borderRadius:9,background:'none',cursor:'pointer',fontSize:13,color:'#6B8EAE'} }, '+ Add part')
         )
       )
+    ),
+    React.createElement('div', { style:{display:'flex',flexWrap:'wrap',alignItems:'center',gap:10,marginTop:22,paddingTop:16,borderTop:'1px solid #EBEEF2'} },
+      React.createElement('div', { style:{fontSize:12,color:'#9BA8B4',marginRight:'auto'} }, `${doneTasks}/${tasks.length} tasks checked`),
+      React.createElement('button', { type:'button', onClick:onClose, style:{padding:'9px 18px',border:'1px solid #C5D0DB',borderRadius:9,background:'#fff',cursor:'pointer',fontSize:13,color:'#555'} }, 'Save draft'),
+      React.createElement('button', { type:'button', onClick:()=>{ if(form.description.trim()) onSubmit(form); }, disabled:!form.description.trim(),
+        style:{padding:'9px 24px',background:form.description.trim()?'#E53935':'#C5D0DB',border:'none',borderRadius:9,color:'#fff',fontWeight:700,cursor:form.description.trim()?'pointer':'default',fontSize:13} }, t('submit'))
     )
   );
+}
+
+function IncidentDialog({ machine, onSubmit, onClose }) {
+  const I = window.Icons;
+  return React.createElement(Modal, {
+    title: React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } }, I && I.alert(20, '#E53935'), 'Log Incident'),
+    subtitle: 'Structured maintenance record · auto-posts to #incidents',
+    width: 700,
+    onClose,
+    footer: null,
+  },
+    React.createElement(IncidentFormContent, { machine, onSubmit, onClose })
+  );
+}
+
+/**
+ * Incident form chrome — variant "main" fills the center column (same content as the old modal).
+ * variant "rail" is for a narrow right drawer (optional / legacy).
+ */
+function IncidentFormShell({ machineId, onClose, variant }) {
+  const isMain = variant === 'main';
+  const I = window.Icons;
+  const { t, addMessage, activeChannel, addToast, setOpenIncidentCount, role } = useKobi();
+  const { channels, machines } = window.KobiData;
+  const channel = channels.find((c) => c.slug === activeChannel);
+  const machine = (machineId && machines[machineId]) || (channel?.machineId ? machines[channel.machineId] : null);
+
+  useEffect(() => {
+    const h = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onClose]);
+
+  const handleSubmit = (inc) => {
+    setOpenIncidentCount((n) => n + 1);
+    addToast(t('incidentSubmitted'));
+    const userId = role === 'manager' ? 'martin' : 'jozef';
+    const incId = `INC-2026-0${490 + Math.floor(Math.random() * 10)}`;
+    addMessage(activeChannel, {
+      id: Date.now() + 'inc',
+      userId: 'kobi',
+      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      isBot: true,
+      markdown: `🚨 **Incident ${incId} opened by @${userId}**\nMachine: ${machine?.name || 'Machine'} · Severity: ${inc.severity} · Status: **Awaiting approval**\n_"${inc.description}"_\n*View in Logbook →*`,
+      sources: [],
+    });
+    addMessage('incidents', {
+      id: Date.now() + 'incc',
+      isIncidentCard: true,
+      incident: {
+        id: incId,
+        machine: machine?.name || 'Machine',
+        issue: (inc.description || '').slice(0, 40) + '…',
+        severity: inc.severity,
+        status: 'awaiting-approval',
+        openedBy: userId,
+        opened: 'just now',
+        notes: inc.description,
+        resolution: inc.resolution,
+      },
+    });
+    onClose();
+  };
+
+  const rootStyle = isMain
+    ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#F5F6F8', overflow: 'hidden' }
+    : { display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, background: '#FAFBFC' };
+
+  const headerStyle = isMain
+    ? {
+        padding: '18px 22px',
+        borderBottom: '1px solid #EBEEF2',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 8,
+        flexShrink: 0,
+        background: '#fff',
+      }
+    : {
+        padding: '14px 16px',
+        borderBottom: '1px solid #E8ECF0',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 8,
+        flexShrink: 0,
+        background: '#FAFBFC',
+      };
+
+  const titleRowStyle = isMain
+    ? { fontWeight: 800, fontSize: 17, color: '#1A2433', display: 'flex', alignItems: 'center', gap: 10 }
+    : { fontWeight: 700, fontSize: 14, color: '#1A2433', display: 'flex', alignItems: 'center', gap: 8 };
+
+  const subtitleStyle = { fontSize: 12, color: '#8B97A3', marginTop: isMain ? 3 : 4, lineHeight: 1.35 };
+
+  const scrollOuter = isMain
+    ? { flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, background: '#F5F6F8', padding: '16px 18px 24px' }
+    : { flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 14px 20px', minHeight: 0, background: '#fff' };
+
+  const formWrapStyle = isMain ? { width: '100%', maxWidth: 720, margin: '0 auto' } : { width: '100%' };
+
+  return React.createElement('div', { style: rootStyle },
+    React.createElement('div', { style: headerStyle },
+      React.createElement('div', { style: { minWidth: 0 } },
+        React.createElement('div', { style: titleRowStyle }, I && I.alert(isMain ? 20 : 18, '#E53935'), t('incident')),
+        React.createElement('div', { style: subtitleStyle }, 'Structured maintenance record · auto-posts to #incidents')
+      ),
+      React.createElement('button', { type: 'button', onClick: onClose, style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 22, lineHeight: 1, flexShrink: 0, padding: 2 } }, '×')
+    ),
+    React.createElement('div', { style: scrollOuter },
+      React.createElement('div', { style: formWrapStyle },
+        React.createElement(IncidentFormContent, { machine, onSubmit: handleSubmit, onClose })
+      )
+    )
+  );
+}
+
+function IncidentSlidePanel(props) {
+  return React.createElement(IncidentFormShell, { ...props, variant: 'rail' });
+}
+
+/** Center column — same fields as the modal (pic 2). */
+function IncidentMainPanel(props) {
+  return React.createElement(IncidentFormShell, { ...props, variant: 'main' });
 }
 
 /* ─── OnPrem modal ─── */
@@ -344,4 +468,4 @@ function ToastContainer() {
   );
 }
 
-Object.assign(window, { AddNoteDialog, IncidentDialog, OnPremModal, SearchOverlay, ToastContainer });
+Object.assign(window, { AddNoteDialog, IncidentDialog, IncidentFormContent, IncidentSlidePanel, IncidentMainPanel, OnPremModal, SearchOverlay, ToastContainer });

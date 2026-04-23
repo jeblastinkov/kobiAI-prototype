@@ -287,4 +287,5 @@ function DashboardView() {
   );
 }
 
+window.KobiCharts = { LineChart };
 Object.assign(window, { DashboardView });

@@ -102,6 +102,116 @@ function incidentMatchesMachine(inc, m) {
   return false;
 }
 
+function MachineStatusPanel({ machineId, onClose }) {
+  const { setRightPanel, t } = useKobi();
+  const machine = window.KobiData.machines[machineId];
+  const op = window.KobiData.machineOperational && window.KobiData.machineOperational[machineId];
+  const I = window.Icons;
+  const LineChart = window.KobiCharts && window.KobiCharts.LineChart;
+
+  if (!machine || !op) return null;
+
+  const statusColor = machine.status === 'online' ? '#4CAF50' : '#FF9800';
+  const statusLabel = machine.status === 'online' ? 'Online' : 'Maintenance';
+  const incidents = (window.KobiData.incidents || []).filter((inc) => incidentMatchesMachine(inc, machine)).slice(0, 5);
+  const statusColors = { resolved: '#4CAF50', 'in-progress': '#FF9800', open: '#F44336', 'awaiting-approval': '#FF9800' };
+  const sevColors = { critical: '#F44336', warning: '#FF9800', info: '#2196F3' };
+  const signalStyle = {
+    ok: { fg: '#2E7D32', bg: '#E8F5E9', lbl: 'OK' },
+    warn: { fg: '#E65100', bg: '#FFF3E0', lbl: 'Warn' },
+    alarm: { fg: '#B71C1C', bg: '#FFEBEE', lbl: 'Alarm' },
+  };
+
+  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
+    React.createElement('div', { style: { padding: '14px 16px', borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 } },
+      React.createElement('div', { style: { minWidth: 0 } },
+        React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433' } }, t('machineStatus')),
+        React.createElement('div', { style: { fontSize: 12, fontWeight: 600, color: '#1A2433', marginTop: 4, lineHeight: 1.3 } }, machine.name),
+        React.createElement('div', { style: { display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 11, fontWeight: 700, color: statusColor } },
+          I.statusDot(7, statusColor), statusLabel
+        )
+      ),
+      React.createElement('button', { type: 'button', onClick: onClose, style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 20, flexShrink: 0 } }, '×')
+    ),
+    React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: 12 } },
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 } },
+        op.kpis.map((k) => React.createElement('div', {
+          key: k.label,
+          style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 10, padding: '10px 12px' },
+        },
+          React.createElement('div', { style: { fontSize: 10, color: '#9BA8B4', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' } }, k.label),
+          React.createElement('div', { style: { fontSize: 18, fontWeight: 800, color: '#1A2433', marginTop: 4 } },
+            k.value, k.unit && React.createElement('span', { style: { fontSize: 13, fontWeight: 600, color: '#6B8EAE' } }, k.unit)
+          )
+        ))
+      ),
+
+      React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 10, padding: '12px 12px 8px', marginBottom: 14 } },
+        React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: '#1E3A5F', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 } }, t('statusUtilizationTrend')),
+        LineChart && React.createElement(LineChart, {
+          data: op.trendUtilization,
+          xKey: 'day',
+          yKey: 'pct',
+          color: machine.color,
+          height: 72,
+          showArea: true,
+          unit: '%',
+        })
+      ),
+
+      React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: '#1E3A5F', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 } }, t('statusLiveSignals')),
+      React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 10, overflow: 'hidden', marginBottom: 14 } },
+        React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '44px 1fr 1fr 52px', gap: 0, padding: '8px 10px', background: '#F5F6F8', borderBottom: '1px solid #E8ECF0', fontSize: 10, fontWeight: 700, color: '#9BA8B4', textTransform: 'uppercase' } },
+          React.createElement('span', null, 'Time'),
+          React.createElement('span', null, 'Tag'),
+          React.createElement('span', null, 'Value'),
+          React.createElement('span', { style: { textAlign: 'right' } }, 'State')
+        ),
+        op.signals.map((row, i) => {
+          const st = signalStyle[row.state] || signalStyle.ok;
+          return React.createElement('div', {
+            key: i,
+            style: { display: 'grid', gridTemplateColumns: '44px 1fr 1fr 52px', alignItems: 'center', padding: '8px 10px', borderBottom: i < op.signals.length - 1 ? '1px solid #F0F2F4' : 'none', fontSize: 12 },
+          },
+            React.createElement('span', { style: { color: '#8B97A3', fontVariantNumeric: 'tabular-nums' } }, row.time),
+            React.createElement('span', { style: { color: '#1A2433', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, row.tag),
+            React.createElement('span', { style: { color: '#4A5A6B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, row.value),
+            React.createElement('span', { style: { textAlign: 'right' } },
+              React.createElement('span', { style: { fontSize: 10, fontWeight: 700, color: st.fg, background: st.bg, borderRadius: 6, padding: '2px 6px' } }, st.lbl)
+            )
+          );
+        })
+      ),
+
+      React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: '#1E3A5F', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 } }, t('statusRecentIncidents')),
+      incidents.length === 0
+        ? React.createElement('div', { style: { fontSize: 12, color: '#8B97A3', padding: '8px 0' } }, '—')
+        : React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 10, overflow: 'hidden' } },
+          incidents.map((inc, i) => React.createElement('div', {
+            key: inc.id,
+            style: {
+              padding: '8px 10px',
+              borderBottom: i < incidents.length - 1 ? '1px solid #F0F2F4' : 'none',
+              borderLeft: `3px solid ${sevColors[inc.severity] || '#E4E7EB'}`,
+            },
+          },
+            React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', gap: 6, marginBottom: 2 } },
+              React.createElement('span', { style: { fontSize: 11, fontWeight: 700, color: '#1E3A5F' } }, inc.id),
+              React.createElement('span', { style: { fontSize: 10, fontWeight: 600, color: statusColors[inc.status] } }, inc.status)
+            ),
+            React.createElement('div', { style: { fontSize: 12, color: '#1A2433', fontWeight: 500, lineHeight: 1.35 } }, inc.issue)
+          ))
+        ),
+
+      React.createElement('button', {
+        type: 'button',
+        onClick: () => setRightPanel({ type: 'machine-card', machineId }),
+        style: { width: '100%', marginTop: 12, padding: '9px 14px', background: '#F0F5FA', border: '1px solid #C5D9EE', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#1E3A5F', textAlign: 'center' },
+      }, t('assetProfile'))
+    )
+  );
+}
+
 function LogbookPanel({ onClose, machineId }) {
   const I = window.Icons;
   const { incidents, machines } = window.KobiData;
@@ -230,18 +340,25 @@ function RightPanel() {
 
   if (isDmKobi && !rightPanel) {
     content = React.createElement(KnowledgePanel, { onClose: close });
+  } else if (rightPanel?.type === 'machine-status') {
+    content = React.createElement(MachineStatusPanel, { machineId: rightPanel.machineId, onClose: close });
   } else if (rightPanel?.type === 'machine-card') {
     content = React.createElement(MachineCardPanel, { machineId: rightPanel.machineId, onClose: close });
   } else if (rightPanel?.type === 'logbook') {
     content = React.createElement(LogbookPanel, { onClose: close, machineId: rightPanel.machineId });
   } else if (rightPanel?.type === 'knowledge') {
     content = React.createElement(KnowledgePanel, { onClose: close });
+  } else if (rightPanel?.type === 'incident') {
+    const Slide = window.IncidentSlidePanel;
+    content = Slide ? React.createElement(Slide, { machineId: rightPanel.machineId, onClose: close }) : null;
   } else {
     return null;
   }
 
+  const panelW = rightPanel?.type === 'incident' && deviceMode !== 'mobile' ? 420 : deviceMode === 'mobile' ? '100%' : 320;
+
   const panelBox = {
-    width: deviceMode === 'mobile' ? '100%' : 320,
+    width: panelW,
     maxWidth: '100%',
     height: '100%',
     flexShrink: 0,
@@ -268,7 +385,7 @@ function RightPanel() {
   }
 
   return React.createElement('div', {
-    style: { width: 320, flexShrink: 0, borderLeft: '1px solid #E8ECF0', background: '#FAFBFC', display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+    style: { width: panelW, flexShrink: 0, borderLeft: '1px solid #E8ECF0', background: '#FAFBFC', display: 'flex', flexDirection: 'column', overflow: 'hidden' }
   }, content);
 }
 
