@@ -1,13 +1,26 @@
 // KobiAI Context — global state for role, language, device, demo state
 
-const { createContext, useContext, useState, useCallback } = React;
+const { createContext, useContext, useState, useCallback, useEffect, useRef } = React;
 
 const KobiCtx = createContext(null);
+
+function getDeviceModeFromWidth(width) {
+  if (typeof width !== 'number') return 'desktop';
+  if (width < 768) return 'mobile';
+  if (width < 1024) return 'tablet';
+  return 'desktop';
+}
 
 function KobiProvider({ children }) {
   const [role, setRole] = useState('manager');
   const [language, setLanguage] = useState('en');
-  const [deviceMode, setDeviceMode] = useState('desktop');
+  const [deviceMode, setDeviceMode] = useState(() => {
+    if (typeof window === 'undefined') return 'desktop';
+    return getDeviceModeFromWidth(window.innerWidth);
+  });
+  // Once user picks a device manually in the top bar, do not auto-overwrite on resize.
+  const [isAutoDeviceMode, setIsAutoDeviceMode] = useState(true);
+  const isAutoDeviceModeRef = useRef(true);
   const [activeChannel, setActiveChannel] = useState('dashboard');
   const [rightPanel, setRightPanel] = useState(null);
   const [notesAdded, setNotesAdded] = useState(false);
@@ -76,11 +89,34 @@ function KobiProvider({ children }) {
     setChannelReturnContext(null);
   }, []);
 
+  useEffect(() => {
+    isAutoDeviceModeRef.current = isAutoDeviceMode;
+  }, [isAutoDeviceMode]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const updateModeFromViewport = () => {
+      if (!isAutoDeviceModeRef.current) return;
+      const next = getDeviceModeFromWidth(window.innerWidth);
+      setDeviceMode(prev => (prev === next ? prev : next));
+    };
+
+    updateModeFromViewport();
+    window.addEventListener('resize', updateModeFromViewport);
+    return () => window.removeEventListener('resize', updateModeFromViewport);
+  }, []);
+
+  const setDeviceModeManual = useCallback((mode) => {
+    setIsAutoDeviceMode(false);
+    setDeviceMode(mode);
+  }, []);
+
   const value = {
     role, setRole: switchRole,
     activeWorkspaceId, setActiveWorkspace,
     language, setLanguage,
-    deviceMode, setDeviceMode,
+    deviceMode, setDeviceMode: setDeviceModeManual,
     activeChannel, setActiveChannel,
     channelReturnContext, setChannelReturnContext,
     rightPanel, setRightPanel,
