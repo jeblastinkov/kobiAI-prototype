@@ -1,4 +1,4 @@
-// KobiAI Right Panel — Machine Card, Logbook, Knowledge Panel
+// KobiKan Right Panel — Machine Card, Logbook, Knowledge Panel
 
 const { useState } = React;
 

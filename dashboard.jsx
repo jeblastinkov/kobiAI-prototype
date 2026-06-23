@@ -1,4 +1,4 @@
-// KobiAI Dashboard v2 — proper charts with grid/axes, clean KPI cards
+// KobiKan Dashboard v2 — proper charts with grid/axes, clean KPI cards
 
 const { useState, useEffect, useRef } = React;
 
@@ -269,8 +269,8 @@ function DashboardView() {
     React.createElement('div', { style: { display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit,minmax(300px,1fr))', gap: 16, marginBottom: 20 } },
       React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, padding: '18px 20px' } },
         React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 4 } }, 'MTTR Trend — 12 weeks'),
-        React.createElement('div', { style: { fontSize: 12, color: '#2E7D32', fontWeight: 600, marginBottom: 10 } }, '▼ 12% since KobiAI deployment (W7)'),
-        React.createElement(LineChart, { data: mttrData, xKey: 'week', yKey: 'mttr', color: '#4d0a52', height: 100, annotation: { idx: 6, label: 'KobiAI' }, unit: 'min' })
+        React.createElement('div', { style: { fontSize: 12, color: '#2E7D32', fontWeight: 600, marginBottom: 10 } }, '▼ 12% since KobiKan deployment (W7)'),
+        React.createElement(LineChart, { data: mttrData, xKey: 'week', yKey: 'mttr', color: '#4d0a52', height: 100, annotation: { idx: 6, label: 'KobiKan' }, unit: 'min' })
       ),
       React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, padding: '18px 20px' } },
         React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 4 } }, 'Knowledge Base Growth'),

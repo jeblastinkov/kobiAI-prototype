@@ -1,4 +1,4 @@
-// KobiAI SVG Icon Library — clean vector icons, no emoji
+// KobiKan SVG Icon Library — clean vector icons, no emoji
 window.Icons = (function() {
   const ce = React.createElement;
   function svg(paths, size, color, sw) {

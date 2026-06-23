@@ -1,4 +1,4 @@
-// KobiAI Dialogs v2 — AddNote, Incident (Run-details style), OnPrem, Search, Toast
+// KobiKan Dialogs v2 — AddNote, Incident (Run-details style), OnPrem, Search, Toast
 
 const { useState, useEffect } = React;
 
@@ -398,7 +398,7 @@ function OnPremModal() {
       React.createElement('div', { style:{display:'flex',justifyContent:'center',marginBottom:14} }, I && I.general(56, '#4d0a52')),
       React.createElement('div', { style:{fontWeight:800,fontSize:22,color:'#1A2433',marginBottom:14} }, t('onPremTitle')||'Your data never leaves this factory.'),
       React.createElement('div', { style:{fontSize:15,color:'#555',lineHeight:1.75,marginBottom:20} },
-        'KobiAI runs entirely on your infrastructure. No cloud, no outbound traffic, no data shared with any third party.',
+        'KobiKan runs entirely on your infrastructure. No cloud, no outbound traffic, no data shared with any third party.',
         React.createElement('br'),React.createElement('br'),
         'Every document, every question, every log stays on your server — inside your firewall, under your control.'
       ),

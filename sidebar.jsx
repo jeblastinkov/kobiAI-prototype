@@ -1,4 +1,4 @@
-// KobiAI Sidebar v2 — structured navigation, accessible, vector icons
+// KobiKan Sidebar v2 — structured navigation, accessible, vector icons
 
 function Sidebar() {
   const { role, activeChannel, setActiveChannel, setShowOnPremModal, setSidebarOpen, setRightPanel, t, activeWorkspaceId } = useKobi();
@@ -8,7 +8,7 @@ function Sidebar() {
   const I = window.Icons;
 
   const dms = [
-    { id: 'kobi',   name: 'Kobi AI',        initials: 'K',  color: '#4d0a52', online: true,  isBot: true },
+    { id: 'kobi',   name: 'KobiKan',        initials: 'K',  color: '#4d0a52', online: true,  isBot: true },
     { id: 'martin', name: 'Martin Horváth',  initials: 'MH', color: '#1E5B7A', online: true  },
     { id: 'pavol',  name: 'Pavol Kováč',     initials: 'PK', color: '#5A3A8E', online: false },
     { id: 'tomas',  name: 'Tomáš Gazda',     initials: 'TG', color: '#7A3A2E', online: false },

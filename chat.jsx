@@ -1,4 +1,4 @@
-// KobiAI Chat v2 — rich messages (reactions, file cards, URGENT), better composer
+// KobiKan Chat v2 — rich messages (reactions, file cards, URGENT), better composer
 
 const { useState, useEffect, useRef, useCallback } = React;
 
@@ -302,25 +302,27 @@ function Message({ msg, isGrouped }) {
 
 /* ─── Typing indicator ─── */
 function TypingIndicator() {
+  const { t } = useKobi();
+  const thinkingText = t('thinking');
   return React.createElement('div',{style:{display:'flex',gap:12,padding:'6px 16px',alignItems:'center'}},
     React.createElement('div',{style:{width:38,height:38,borderRadius:'50%',background:'#4d0a52',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:800,fontSize:15,flexShrink:0}},'K'),
     React.createElement('div',{style:{background:'#F8F4FA',border:'1px solid #EAE0EF',borderRadius:12,padding:'10px 16px',display:'flex',alignItems:'center',gap:10}},
       React.createElement('div',{style:{display:'flex',gap:4}},
         [0,1,2].map(i=>React.createElement('div',{key:i,style:{width:7,height:7,borderRadius:'50%',background:'#4d0a52',opacity:0.6,animation:`bounce 1s ease-in-out ${i*0.15}s infinite`}}))
       ),
-      React.createElement('span',{style:{fontSize:13,color:'#6B8EAE'}},'KobiAI is thinking…')
+      React.createElement('span',{style:{fontSize:13,color:'#6B8EAE'}},thinkingText)
     )
   );
 }
 
 /** Typed into the composer when the user taps the AI shortcut (also matches sendMessage /ask* routing). */
-const ASK_KOBI_AI_PREFIX = '/ask-kobiAI ';
+const ASK_KOBI_AI_PREFIX = '/ask-kobikan ';
 
 /* ─── Slash popover ─── */
 function SlashPopover({ input, onSelect }) {
   const cmds=[
-    {cmd:'/ask',desc:'Ask KobiAI a question',handler:true},
-    {cmd:'/ask-kobiAI',desc:'Ask KobiAI (same as AI button)',handler:true},
+    {cmd:'/ask',desc:'Ask KobiKan a question',handler:true},
+    {cmd:'/ask-kobikan',desc:'Ask KobiKan (same as AI button)',handler:true},
     {cmd:'/add-note',desc:'Add a maintenance note',handler:true},
     {cmd:'/incident',desc:'Log a structured incident',handler:true},
     {cmd:'/search',desc:'Search messages and docs',handler:true},
@@ -398,7 +400,7 @@ function Composer({ channelName, onSend, onVoice, voiceActive, input, setInput, 
           placeholder:`Write to #${channelName}`, rows:1,
           style:{flex:1,background:'none',border:'none',outline:'none',resize:'none',fontSize:14,color:'#1A2433',lineHeight:1.6,maxHeight:120,overflow:'auto',fontFamily:'inherit',paddingTop:2}
         }),
-        React.createElement('button',{type:'button',title:'Ask KobiAI',onClick:()=>{setInput(ASK_KOBI_AI_PREFIX);inputRef.current?.focus();},
+        React.createElement('button',{type:'button',title:'Ask KobiKan',onClick:()=>{setInput(ASK_KOBI_AI_PREFIX);inputRef.current?.focus();},
           style:{background:'#F3EAF5',border:'none',cursor:'pointer',padding:'6px 8px',borderRadius:8,color:'#4d0a52',transition:'all 0.2s',flexShrink:0,display:'flex',alignItems:'center'}},
           I&&I.sparkles(18,'#4d0a52')
         ),
@@ -526,9 +528,9 @@ function BreadcrumbRow({ parts, compact }) {
 /* ─── Main ChatView ─── */
 function ChatView() {
   const I = window.Icons;
-  const { activeChannel, setActiveChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, rightPanel, setRightPanel, setShowSearchOverlay, t, role, deviceMode, activeWorkspaceId, channelReturnContext, setChannelReturnContext } = useKobi();
+  const { activeChannel, setActiveChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, rightPanel, setRightPanel, setShowSearchOverlay, t, role, language, deviceMode, activeWorkspaceId, channelReturnContext, setChannelReturnContext } = useKobi();
   const compact = deviceMode === 'mobile' || deviceMode === 'tablet';
-  const { channels, users, machines, botResponses, voicePrefills } = window.KobiData;
+  const { channels, users, machines, botResponses, botResponsesSk, voicePrefills } = window.KobiData;
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const [voiceActive, setVoiceActive] = useState(false);
@@ -563,14 +565,20 @@ function ChatView() {
   const getBotResponse = useCallback((userText) => {
     const slug = activeChannel;
     const key = slug.replace('machine-','').split('-')[0];
-    const pool = botResponses[key] || botResponses.siemens || [];
+    const isSk = language === 'sk';
+    const responseMap = isSk ? (botResponsesSk || botResponses) : botResponses;
+    const pool = responseMap[key] || responseMap.siemens || botResponses[key] || botResponses.siemens || [];
     const matched = pool.find(r => r.trigger?.some(tk => userText.toLowerCase().includes(tk.toLowerCase())));
-    const response = matched || pool[0] || { markdown: 'I\'m ready to help. Could you clarify your question?', sources: [] };
+    const fallbackText = isSk ? 'Som pripravený pomôcť. Môžete upresniť svoju otázku?' : 'I\'m ready to help. Could you clarify your question?';
+    const response = matched || pool[0] || { markdown: fallbackText, sources: [] };
+    const noteSource = isSk
+      ? { title:'Vaša poznámka (práve teraz)', ref:'Pridané vami · dnes', isNote:true }
+      : { title:'Your note (just now)', ref:'Added by you · today', isNote:true };
     const sources = notesAdded
-      ? [{ title:'Your note (just now)', ref:'Added by you · today', isNote:true }, ...(response.sources||[])]
+      ? [noteSource, ...(response.sources||[])]
       : (response.sources||[]);
     return { ...response, sources };
-  }, [activeChannel, notesAdded]);
+  }, [activeChannel, notesAdded, language, botResponses, botResponsesSk]);
 
   const sendMessage = useCallback(async (text) => {
     if (!text.trim()) return;
@@ -614,7 +622,7 @@ function ChatView() {
     if (cmd.cmd==='/incident') { setInput(''); setRightPanel({ type: 'incident', machineId: channel?.machineId || null }); return; }
     if (cmd.cmd==='/search') { setInput(''); setShowSearchOverlay(true); return; }
     if (cmd.cmd==='/ask') { setInput('@kobi '); inputRef.current?.focus(); return; }
-    if (cmd.cmd==='/ask-kobiAI') { setInput(ASK_KOBI_AI_PREFIX); inputRef.current?.focus(); return; }
+    if (cmd.cmd==='/ask-kobikan') { setInput(ASK_KOBI_AI_PREFIX); inputRef.current?.focus(); return; }
     setInput(cmd.cmd+' ');
     inputRef.current?.focus();
   };

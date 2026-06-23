@@ -1,4 +1,4 @@
-// KobiAI App root — TopBar, Shell, Device frame
+// KobiKan App root — TopBar, Shell, Device frame
 
 const { useState, useEffect } = React;
 

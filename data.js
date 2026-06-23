@@ -1,4 +1,4 @@
-// KobiAI Mock Data — all data is fictional for demo purposes
+// KobiKan Mock Data — all data is fictional for demo purposes
 
 window.KobiData = (() => {
 
@@ -176,9 +176,9 @@ const hrsAgo  = (h) => new Date(now - h * 3600000).toLocaleTimeString('en-GB', {
 
 const conversations = {
   general: [
-    { id: 'g1', userId: 'kobi', time: 'Yesterday 08:00', pinned: true, text: `Welcome to **KobiAI · Bratislava Plant**. I am your AI maintenance assistant. Ask me anything about your machines, log incidents with \`/incident\`, drop documents in \`#docs-drop\`, and open a machine channel to get context-aware help. Everything stays inside this factory.` },
+    { id: 'g1', userId: 'kobi', time: 'Yesterday 08:00', pinned: true, text: `Welcome to **KobiKan · Bratislava Plant**. I am your AI maintenance assistant. Ask me anything about your machines, log incidents with \`/incident\`, drop documents in \`#docs-drop\`, and open a machine channel to get context-aware help. Everything stays inside this factory.` },
     { id: 'g2', userId: 'tomas', time: 'Yesterday 13:22', text: 'Heads up — KR 60 had a welding arc misalignment yesterday, resolved. Thread in #incidents.' },
-    { id: 'g3', userId: 'martin', time: 'Yesterday 16:05', text: 'New Zünd docs uploaded this morning. KobiAI finished indexing in 18 seconds. 👀', threadCount: 1, threadPreview: { userId: 'kobi', text: '📄 Received "Zünd_G3_Manual_EN.pdf" (412 pages). Parsed. 1,034 chunks indexed. 23 diagrams extracted. Available in #machine-zund-g3.' } },
+    { id: 'g3', userId: 'martin', time: 'Yesterday 16:05', text: 'New Zünd docs uploaded this morning. KobiKan finished indexing in 18 seconds. 👀', threadCount: 1, threadPreview: { userId: 'kobi', text: '📄 Received "Zünd_G3_Manual_EN.pdf" (412 pages). Parsed. 1,034 chunks indexed. 23 diagrams extracted. Available in #machine-zund-g3.' } },
     { id: 'g5', userId: 'pavol', time: hrsAgo(2.5), text: '**Line cascade:** Zünd in Hall C is ~40 min behind — upstream CNC in #machine-siemens was in planned PM until 11:00. Welding in #machine-kuka is clear; cutting should catch up after lunch. Posting for MES line balance.' },
     {
       id: 'g6',
@@ -648,6 +648,103 @@ I can re-summarize the suggested **−72 / −69 / −70 kPa** path and the **se
   ],
 };
 
+const botResponsesSk = {
+  siemens: [
+    {
+      trigger: ['F-304', 'belt', 'restart', 'overcurrent', 'error', 'chyba', 'reštart', 'nadprúd'],
+      markdown: `**F-304 — Nadprúd: Následná analýza**
+
+Na základe opakujúceho sa vzoru F-304 tento týždeň vidím možný trend degradácie motora na Linke 3.
+
+**Odporúčané akcie:**
+1. Naplánovať úplný test odporu vinutia motora (všetky 3 fázy) počas nasledujúceho plánovaného odstavenia
+2. Skontrolovať históriu tepelného preťaženia v parametroch pohonu r0947[0..7]
+3. Posúdiť stav ložísk — opotrebované ložiská zvyšujú odber prúdu
+
+**Náhradné diely (demo):** Motor **1FK7083-5AF71** — **polica D2-04 · Sklad 1** · automatické doplnenie pri spotrebe
+
+⚠️ 3× F-304 za 14 dní = prešetriť hlavnú príčinu pred ďalšou zmenou.`,
+      sources: [
+        { title: 'Siemens SINAMICS Diagnostics Guide', ref: 's.312', date: '' },
+        { title: 'Protokol o údržbe #MK-2026-0418', ref: 'J. Novák · Dnes', date: '', isNote: true },
+        { title: 'Náhradné diely a zásoby', ref: 'ERP snapshot · demo', date: '', isNote: true },
+      ],
+    },
+    {
+      trigger: ['p0304', 'parameter', 'rated', 'menovitý', 'prúd'],
+      markdown: `**Parameter p0304 — Menovitý prúd motora**
+
+Pre vašu jednotku Siemens 1FK7083-5AF71 na Linke 3:
+
+| Parameter | Očakávaná hodnota | Aktuálna hodnota | Stav |
+|-----------|-------------------|-----------------|------|
+| p0304 (Menovitý prúd) | 12,5 A | 12,5 A | ✅ |
+| p0305 (Menovité otáčky) | 2000 ot/min | 2000 ot/min | ✅ |
+| p0307 (Menovitý výkon) | 4,0 kW | 4,0 kW | ✅ |
+| r0027 (Výstupný prúd) | < 12,5 A | 13,1 A | ⚠️ |
+
+r0027 ukazuje 13,1 A — mierne nad menovitou hodnotou. Sledujte.`,
+      sources: [
+        { title: 'SINAMICS S120 Parameter Manual', ref: 's.89–91', date: '' },
+        { title: 'Uvádza v prevádzku — CNC Linka 3', ref: 'jan 2019', date: '' },
+      ],
+    },
+  ],
+  kuka: [
+    {
+      trigger: ['arc', 'drift', 'welding', 'TCP', 'calibration', 'oblúk', 'drift', 'zváranie', 'kalibrácia'],
+      markdown: `**Odchýlka zvárania — Aktualizovaná diagnóza KUKA KR 60-3**
+
+Po preskúmaní histórie incidentov KR 60-3:
+
+Opakujúca sa odchýlka oblúka na priechode 3 koreluje s cyklami výmeny zváracieho hrotu. Odchýlka TCP sa hromadí ~0,3 mm pri každej výmene hrotu, ak sa kalibrácia vynechá.
+
+**Odporúčaná zmena protokolu:**
+- Povinná kalibrácia TCP po každej výmene hrotu (pridá 4 min k procedúre)
+- Pridať kontrolu opotrebenia hrotu do denného predzmenovacieho zoznamu pri 80 % (aktuálne: výmena pri 95 %)
+
+**Nasledujúce servisné okno**: Naplánovať 45-minútovú kontrolu TCP + podávania drôtu pred piatkovou výrobou.`,
+      sources: [
+        { title: 'KUKA KSS 8.6 Maintenance Guide', ref: 'Kap.7.3', date: '' },
+        { title: 'Incident INC-2026-0484', ref: 'Vyriešil M. Horváth', date: '', isNote: true },
+      ],
+    },
+  ],
+  zund: [
+    {
+      trigger: ['vacuum', 'pressure', 'zone', 'knife', 'film', 'vákuum', 'tlak', 'zóna', 'nôž'],
+      markdown: `**Zünd G3 Vákuový systém — Zóna 3 Ďalší postup**
+
+Na základe vyčistenia nečistôt včera som aktualizoval odporúčania pre údržbu:
+
+**Zóna 3 vykazuje 3× vyššiu akumuláciu nečistôt** ako zóny 1–2 (zarovnanie dráhy podávania fólie).
+
+**Navrhovaná preventívna akcia:**
+- Pridať kontrolu vákuových otvorov Zóny 3 do predzmenovacieho zoznamu (5 min)
+- Vymeniť tesniacie pásy v Q2 2026 (aktuálne opotrebenie: 73 %)
+- Odporúča sa rekalibrácia tlaku noža — aktuálne: 38 daN, optimálne: 40–42 daN pre tento materiál
+
+📄 Toto som zaznačil na ďalšie servisné okno.`,
+      sources: [
+        { title: 'Zünd G3 PM Schedule', ref: 'Rev 2.1', date: '' },
+        { title: 'Poznámka — P. Kováč', ref: 'Včera', date: '', isNote: true },
+      ],
+    },
+    {
+      trigger: ['tuning', 'setpoint', 'parameter', 'edge', 'foam', 'quality', 'zone', 'ladenie', 'nastavenie', 'hrana', 'pena', 'kvalita'],
+      markdown: `**Nastavenie vákuového setpointu / procesné ladenie**
+
+Pre úpravu **zdvíhania hrany** a **tlaku v zónach** používajte malé kroky a každú zmenu zaznamenajte. Najnovšia **peer-schválená tabuľka** je vo vlákne #machine-zund (zóny 1–3).
+
+Môžem znova zosumarizovať navrhovanú cestu **−72 / −69 / −70 kPa** a oznámenie o obstarávaní **tesniacich pások** — napíšte *"zhrň zünd ladenie"*.`,
+      sources: [
+        { title: 'Zünd G3 Process Guide', ref: 'Kap.11', date: '' },
+        { title: 'Servisný záznam (auditný protokol)', ref: 'vyžadované pre zmeny setpointu', date: '', isNote: true },
+      ],
+    },
+  ],
+};
+
 const voicePrefills = {
   'machine-siemens': '@kobi The drive is throwing F-304 again — same as last week?',
   'machine-kuka': '@kobi Welding arc keeps drifting on KR 60 — what\'s the most likely cause?',
@@ -685,7 +782,7 @@ const i18n = {
     pinned: 'Pinned',
     today: 'Today',
     yesterday: 'Yesterday',
-    thinking: 'KobiAI is thinking…',
+    thinking: 'KobiKan is thinking…',
     sources: 'Sources',
     save: 'Save',
     cancel: 'Cancel',
@@ -715,13 +812,13 @@ const i18n = {
     intErpDesc: 'Orders, stock, and costing (SAP/IFS-style bridge).',
     intMes: 'MES',
     intMesDesc: 'Shop-floor execution, OEE, and line status.',
-    intKobi: 'Kobi AI',
-    intKobiDesc: 'In-app Kobi direct message and knowledge panel (native, not an iframe).',
+    intKobi: 'KobiKan',
+    intKobiDesc: 'In-app KobiKan direct message and knowledge panel (native, not an iframe).',
     intEmbedHint: 'In production, each tile opens your SSO iframe URL — same app-bar pattern as Mattermost.',
     channelMessages: 'Channel messages',
     wsSwitchMenu: 'Site & lines',
     wsSwitched: 'Site updated',
-    wsBrandName: 'KobiAI',
+    wsBrandName: 'KobiKan',
     wsBratislava: 'Bratislava Plant',
     wsBratislavaSub: 'Halls A–C · Press & welding',
     wsKosice: 'Košice Plant',
@@ -765,7 +862,7 @@ const i18n = {
     pinned: 'Pripnuté',
     today: 'Dnes',
     yesterday: 'Včera',
-    thinking: 'KobiAI premýšľa…',
+    thinking: 'KobiKan premýšľa…',
     sources: 'Zdroje',
     save: 'Uložiť',
     cancel: 'Zrušiť',
@@ -795,13 +892,13 @@ const i18n = {
     intErpDesc: 'Objednávky, sklad, náklady (SAP/IFS).',
     intMes: 'MES',
     intMesDesc: 'Dielňa, OEE, linky.',
-    intKobi: 'Kobi AI',
-    intKobiDesc: 'Priama správa a znalostný panel (natívne).',
+    intKobi: 'KobiKan',
+    intKobiDesc: 'Priama správa a znalostný panel KobiKan (natívne).',
     intEmbedHint: 'V produkcii otvoríte SSO URL v iframe, ako u Mattermost.',
     channelMessages: 'Správy v kanáli',
     wsSwitchMenu: 'Závod a linky',
     wsSwitched: 'Závod bol zmenený',
-    wsBrandName: 'KobiAI',
+    wsBrandName: 'KobiKan',
     wsBratislava: 'Závod Bratislava',
     wsBratislavaSub: 'Haly A–C · lisovanie a zváranie',
     wsKosice: 'Závod Košice',
@@ -830,7 +927,7 @@ const i18n = {
     technician: 'Techniker',
     manager: 'Manager',
     sources: 'Quellen',
-    thinking: 'KobiAI denkt…',
+    thinking: 'KobiKan denkt…',
     save: 'Speichern',
     cancel: 'Abbrechen',
     today: 'Heute',
@@ -850,7 +947,7 @@ const i18n = {
     technician: 'Technik',
     manager: 'Manažer',
     sources: 'Zdroje',
-    thinking: 'KobiAI přemýšlí…',
+    thinking: 'KobiKan přemýšlí…',
     save: 'Uložit',
     cancel: 'Zrušit',
     today: 'Dnes',
@@ -870,7 +967,7 @@ const i18n = {
     technician: 'Technik',
     manager: 'Menedżer',
     sources: 'Źródła',
-    thinking: 'KobiAI myśli…',
+    thinking: 'KobiKan myśli…',
     save: 'Zapisz',
     cancel: 'Anuluj',
     today: 'Dzisiaj',
@@ -913,7 +1010,7 @@ function mediaPreviewForSource(s) {
 }
 
 return {
-  users, channels, machines, machineOperational, workspaces, integrationApps, conversations, incidents, dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine, predictiveAlerts, botResponses, voicePrefills, i18n,
+  users, channels, machines, machineOperational, workspaces, integrationApps, conversations, incidents, dashboardKPIs, aiQueryData, mttrData, knowledgeData, incidentsByMachine, predictiveAlerts, botResponses, botResponsesSk, voicePrefills, i18n,
   getWorkspaceById, getFirstMachineSlugForWorkspace, buildMachineNavEntries,
   DEMO_PDF_URL, mediaPreviewForFile, mediaPreviewForSource,
 };

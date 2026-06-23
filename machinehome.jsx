@@ -1,4 +1,4 @@
-// KobiAI Machine Home — landing page for each machine channel
+// KobiKan Machine Home — landing page for each machine channel
 
 function MachineHome({ machineId, onAction }) {
   const { setRightPanel, deviceMode } = useKobi();
@@ -39,7 +39,7 @@ function MachineHome({ machineId, onAction }) {
       bg: '#E8F5E9',
       border: '#A5D6A7',
       label: 'Get Help',
-      desc: 'Ask KobiAI — get answers from the manual',
+      desc: 'Ask KobiKan — get answers from the manual',
       onClick: () => onAction('ask'),
     },
   ];

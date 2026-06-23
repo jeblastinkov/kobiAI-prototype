@@ -1,4 +1,4 @@
-// KobiAI — plant / line switcher (top bar + sidebar)
+// KobiKan — plant / line switcher (top bar + sidebar)
 
 const { useState, useRef, useEffect } = React;
 

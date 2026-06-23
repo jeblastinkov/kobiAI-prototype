@@ -1,4 +1,4 @@
-// KobiAI Context — global state for role, language, device, demo state
+// KobiKan Context — global state for role, language, device, demo state
 
 const { createContext, useContext, useState, useCallback, useEffect, useRef } = React;
 
