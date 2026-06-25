@@ -1,15 +1,16 @@
 // KobiKan Machine Home — landing page for each machine channel
 
 function MachineHome({ machineId, onAction }) {
-  const { setRightPanel, deviceMode } = useKobi();
-  const machine = window.KobiData.machines[machineId];
+  const { setRightPanel, deviceMode, t, getLocalized } = useKobi();
+  const localized = getLocalized();
+  const machine = localized.machines[machineId] || window.KobiData.machines[machineId];
   const I = window.Icons;
   const compact = deviceMode === 'mobile' || deviceMode === 'tablet';
 
   if (!machine) return null;
 
   const statusColor = machine.status === 'online' ? '#4CAF50' : '#FF9800';
-  const statusLabel = machine.status === 'online' ? 'Online' : 'Maintenance';
+  const statusLabel = machine.status === 'online' ? t('statusOnline') : t('statusMaintenance');
 
   const actions = [
     {
@@ -18,8 +19,8 @@ function MachineHome({ machineId, onAction }) {
       color: '#1565C0',
       bg: '#E3F2FD',
       border: '#90CAF9',
-      label: 'Machine Status',
-      desc: 'OEE, utilization trend, live signals and recent incidents',
+      label: t('mhMachineStatus'),
+      desc: t('mhStatusDesc'),
       onClick: () => setRightPanel({ type: 'machine-status', machineId }),
     },
     {
@@ -28,8 +29,8 @@ function MachineHome({ machineId, onAction }) {
       color: '#B71C1C',
       bg: '#FFEBEE',
       border: '#EF9A9A',
-      label: 'Report Incident',
-      desc: 'Log a fault, repair or maintenance event',
+      label: t('mhReportIncident'),
+      desc: t('mhReportDesc'),
       onClick: () => onAction('incident'),
     },
     {
@@ -38,8 +39,8 @@ function MachineHome({ machineId, onAction }) {
       color: '#1B5E20',
       bg: '#E8F5E9',
       border: '#A5D6A7',
-      label: 'Get Help',
-      desc: 'Ask KobiKan — get answers from the manual',
+      label: t('mhGetHelp'),
+      desc: t('mhGetDesc'),
       onClick: () => onAction('ask'),
     },
   ];
@@ -47,12 +48,10 @@ function MachineHome({ machineId, onAction }) {
   return React.createElement('div', {
     style: { flex: 1, overflowY: 'auto', background: '#F5F6F8', padding: compact ? '18px 14px' : '32px 28px', minWidth: 0 }
   },
-    // Machine header
     React.createElement('div', {
       style: { background: '#fff', borderRadius: 16, padding: compact ? '18px 16px' : '24px 28px', marginBottom: compact ? 16 : 24, border: '1px solid #E4E7EB', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }
     },
       React.createElement('div', { style: { display: 'flex', alignItems: 'flex-start', gap: compact ? 14 : 20, flexWrap: 'wrap', minWidth: 0 } },
-        // Machine icon placeholder
         React.createElement('div', {
           style: {
             width: 80, height: 80, borderRadius: 16, flexShrink: 0,
@@ -78,10 +77,10 @@ function MachineHome({ machineId, onAction }) {
           React.createElement('div', { style: { fontSize: compact ? 13 : 15, color: '#6B8EAE', marginBottom: 10, lineHeight: 1.35 } }, `${machine.type} · ${machine.location}`),
           React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: compact ? '12px 18px' : 20 } },
             [
-              { label: 'Docs indexed', value: machine.docsIndexed },
-              { label: 'Knowledge chunks', value: machine.chunksIndexed.toLocaleString() },
-              { label: 'Diagrams', value: machine.diagramsExtracted },
-              { label: 'Last incident', value: machine.lastIncident },
+              { label: t('mhDocsIndexed'), value: machine.docsIndexed },
+              { label: t('mhKnowledgeChunks'), value: machine.chunksIndexed.toLocaleString() },
+              { label: t('mhDiagrams'), value: machine.diagramsExtracted },
+              { label: t('mhLastIncident'), value: machine.lastIncident },
             ].map(({ label, value }) =>
               React.createElement('div', { key: label },
                 React.createElement('div', { style: { fontSize: 11, color: '#9BA8B4', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' } }, label),
@@ -93,9 +92,8 @@ function MachineHome({ machineId, onAction }) {
       )
     ),
 
-    // Action cards
     React.createElement('div', { style: { marginBottom: 12 } },
-      React.createElement('div', { style: { fontSize: 13, fontWeight: 700, color: '#8B97A3', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 } }, 'What would you like to do?')
+      React.createElement('div', { style: { fontSize: 13, fontWeight: 700, color: '#8B97A3', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 } }, t('mhWhatWouldYouLike'))
     ),
     React.createElement('div', { style: { display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${compact ? 160 : 220}px, 1fr))`, gap: 14 } },
       actions.map(action => {
@@ -125,7 +123,6 @@ function MachineHome({ machineId, onAction }) {
         );
       })
     ),
-    // Single text entry to channel thread (no second “Open Chat” bar; no duplicate stats row)
     React.createElement('div', { style: { marginTop: 4, textAlign: 'center' } },
       React.createElement('button', {
         type: 'button',
@@ -134,7 +131,7 @@ function MachineHome({ machineId, onAction }) {
           background: 'none', border: 'none', color: '#4d0a52', fontSize: 14, fontWeight: 600,
           cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3, padding: '8px 12px',
         },
-      }, 'View channel messages')
+      }, t('viewChannelMessages'))
     )
   );
 }

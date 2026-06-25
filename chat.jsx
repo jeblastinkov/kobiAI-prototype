@@ -80,13 +80,13 @@ function FileCard({ file }) {
 /* ─── Sources card ─── */
 function SourcesCard({ sources, visible }) {
   const I = window.Icons;
-  const { setMediaViewer } = useKobi();
+  const { setMediaViewer, t } = useKobi();
   const [expanded, setExpanded] = useState(false);
   if (!visible || !sources?.length) return null;
   return React.createElement('div', { style:{marginTop:10,background:'#F3EAF5',border:'1px solid #C9A8D0',borderRadius:10,overflow:'hidden',fontSize:13} },
     React.createElement('button', { type:'button', onClick:()=>setExpanded(e=>!e), style:{width:'100%',padding:'8px 12px',background:'none',border:'none',textAlign:'left',cursor:'pointer',display:'flex',alignItems:'center',gap:8,color:'#4d0a52',fontWeight:600} },
       I && I.fileText(16, '#4d0a52'),
-      React.createElement('span',null,`Sources (${sources.length})`),
+      React.createElement('span',null,`${t('sourcesCount')} (${sources.length})`),
       React.createElement('span',{style:{marginLeft:'auto',color:'#9BA8B4',display:'flex'}}, I && (expanded ? I.chevronUp(14, '#9BA8B4') : I.chevronDown(14, '#9BA8B4')))
     ),
     expanded && React.createElement('div',{style:{padding:'4px 12px 10px',borderTop:'1px solid #C9A8D0'}},
@@ -114,19 +114,19 @@ function SourcesCard({ sources, visible }) {
 
 /* ─── Diagram preview ─── */
 function DiagramPreview({ diagram }) {
-  const { setMediaViewer } = useKobi();
+  const { setMediaViewer, t } = useKobi();
   if (!diagram) return null;
   const openDiagram = () => {
     setMediaViewer({
       kind: 'image',
       src: 'https://picsum.photos/seed/wiring-schematic/1500/900',
-      title: diagram.label || 'Diagram',
+      title: diagram.label || t('diagram'),
     });
   };
   return React.createElement('div', { style:{marginTop:8,background:'#EDF1F6',border:'1px solid #CDD5DF',borderRadius:9,padding:'10px 14px',display:'flex',alignItems:'center',gap:10,cursor:'pointer',maxWidth:340},
     role: 'button',
     tabIndex: 0,
-    title: 'View full size',
+    title: t('viewFullSize'),
     onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDiagram(); } },
     onClick: openDiagram,
     onMouseEnter:e=>e.currentTarget.style.background='#E4ECF4', onMouseLeave:e=>e.currentTarget.style.background='#EDF1F6' },
@@ -161,7 +161,7 @@ function BotMessage({ msg, sourcesVisible }) {
 /* ─── Ingestion card ─── */
 function IngestionCard({ file }) {
   const I = window.Icons;
-  const { setMediaViewer } = useKobi();
+  const { setMediaViewer, t } = useKobi();
   const [phase, setPhase] = useState(file.status==='indexed'?'done':'parsing');
   const [progress, setProgress] = useState(file.status==='indexed'?100:0);
   const preview = (window.KobiData && window.KobiData.mediaPreviewForFile) ? window.KobiData.mediaPreviewForFile(file) : null;
@@ -178,7 +178,7 @@ function IngestionCard({ file }) {
     style:{background:'#F0F8FF',border:'1px solid #C5D9EE',borderRadius:10,padding:'12px 16px',maxWidth:380,cursor: preview ? 'pointer' : 'default',outline:'none'},
     role: preview ? 'button' : undefined,
     tabIndex: preview ? 0 : undefined,
-    title: preview ? 'Open document preview' : undefined,
+    title: preview ? t('openingDocument') : undefined,
     onKeyDown: preview ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPreview(); } } : undefined,
     onClick: preview ? openPreview : undefined,
   },
@@ -188,18 +188,18 @@ function IngestionCard({ file }) {
         React.createElement('div',{style:{fontWeight:600,fontSize:13,color:'#1A2433'}}, file.name),
         React.createElement('div',{style:{fontSize:11,color:'#6B8EAE'}},file.size+' MB')
       ),
-      phase==='done'&&React.createElement('span',{style:{marginLeft:'auto',display:'flex',alignItems:'center',gap:5,color:'#4CAF50',fontWeight:700,fontSize:12}}, I && I.checkCircle(15, '#4CAF50'), 'Indexed')
+      phase==='done'&&React.createElement('span',{style:{marginLeft:'auto',display:'flex',alignItems:'center',gap:5,color:'#4CAF50',fontWeight:700,fontSize:12}}, I && I.checkCircle(15, '#4CAF50'), t('indexed'))
     ),
     phase!=='done'&&React.createElement('div',null,
       React.createElement('div',{style:{height:5,background:'#C5D9EE',borderRadius:3,overflow:'hidden'}},
         React.createElement('div',{style:{height:'100%',width:`${progress}%`,background:'#4CAF50',transition:'width 0.06s linear',borderRadius:3}})
       ),
-      React.createElement('div',{style:{fontSize:11,color:'#6B8EAE',marginTop:4}},'Parsing…')
+      React.createElement('div',{style:{fontSize:11,color:'#6B8EAE',marginTop:4}},t('parsing'))
     ),
     phase==='done'&&React.createElement('div',{style:{fontSize:12,color:'#555'}},
-      `${file.pages} pages · ${file.chunks} chunks · ${file.diagrams} diagrams`,
+      t('pagesChunksFmt').replace('{pages}', file.pages).replace('{chunks}', file.chunks).replace('{diagrams}', file.diagrams),
       React.createElement('br'),
-      React.createElement('span',{style:{color:'#4CAF50',fontWeight:500}},`Tagged: ${file.machine}`)
+      React.createElement('span',{style:{color:'#4CAF50',fontWeight:500}},`${t('tagged')} ${file.machine}`)
     )
   );
 }
@@ -207,11 +207,12 @@ function IngestionCard({ file }) {
 /* ─── Incident card ─── */
 function IncidentCard({ incident: inc }) {
   const I = window.Icons;
+  const { t } = useKobi();
   const sevColor = { critical:'#B71C1C', warning:'#E65100', info:'#1565C0' }[inc.severity]||'#555';
   const stBg = { resolved:'#E8F5E9','in-progress':'#FFF3E0',open:'#FFEBEE','awaiting-approval':'#FFF3E0' }[inc.status]||'#F5F5F5';
   const stCol = { resolved:'#2E7D32','in-progress':'#E65100',open:'#B71C1C','awaiting-approval':'#E65100' }[inc.status]||'#555';
   const stDot = { resolved:'#4CAF50','in-progress':'#FF9800',open:'#F44336','awaiting-approval':'#FF9800' }[inc.status]||'#9E9E9E';
-  const stLbl = { resolved:'Resolved','in-progress':'In progress',open:'Open','awaiting-approval':'Awaiting' }[inc.status]||String(inc.status);
+  const stLbl = window.KobiData.statusLabel ? window.KobiData.statusLabel(inc.status, t) : inc.status;
   return React.createElement('div',{style:{border:`1px solid ${sevColor}44`,borderLeft:`4px solid ${sevColor}`,borderRadius:10,padding:'12px 16px',background:'#fff',marginBottom:6}},
     React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:5}},
       React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6,fontWeight:700,color:'#1A2433',fontSize:13}}, I && I.alert(15, '#B71C1C'), inc.id),
@@ -223,10 +224,10 @@ function IncidentCard({ incident: inc }) {
     ),
     inc.notes&&React.createElement('div',{style:{fontSize:13,color:'#555',fontStyle:'italic',marginBottom:5}},`"${inc.notes}"`),
     React.createElement('div',{style:{display:'flex',gap:12,fontSize:11,color:'#8B97A3',flexWrap:'wrap'}},
-      React.createElement('span',null,`Opened by @${inc.openedBy}`),
-      inc.resolvedBy&&React.createElement('span',null,`· Resolved by @${inc.resolvedBy}`),
+      React.createElement('span',null,`${t('openedBy')} @${inc.openedBy}`),
+      inc.resolvedBy&&React.createElement('span',null,`· ${t('resolvedByLabel')} @${inc.resolvedBy}`),
       inc.mttr&&React.createElement('span',null,`· MTTR: ${inc.mttr}`),
-      inc.parts?.length>0&&React.createElement('span',null,`· Parts: ${inc.parts.join(', ')}`)
+      inc.parts?.length>0&&React.createElement('span',null,`· ${t('partsLabel')}: ${inc.parts.join(', ')}`)
     )
   );
 }
@@ -244,6 +245,7 @@ function DayDivider({ label }) {
 function Message({ msg, isGrouped }) {
   const I = window.Icons;
   const { users } = window.KobiData;
+  const { t } = useKobi();
   const user = users[msg.userId]||{initials:'?',color:'#999',name:msg.userId};
   const [hov, setHov] = useState(false);
   const [showReactPicker, setShowReactPicker] = useState(false);
@@ -262,8 +264,8 @@ function Message({ msg, isGrouped }) {
     React.createElement('div',{style:{flex:1,minWidth:0}},
       !isGrouped&&React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:3}},
         React.createElement('span',{style:{fontWeight:700,color:'#1A2433',fontSize:14}},user.name),
-        user.isBot&&React.createElement('span',{style:{background:'#4d0a52',color:'#fff',fontSize:10,fontWeight:700,borderRadius:4,padding:'1px 6px',letterSpacing:'0.04em'}},'APP'),
-        msg.urgent&&React.createElement('span',{style:{background:'#E53935',color:'#fff',fontSize:10,fontWeight:700,borderRadius:4,padding:'2px 8px',letterSpacing:'0.06em'}},'URGENT'),
+        user.isBot&&React.createElement('span',{style:{background:'#4d0a52',color:'#fff',fontSize:10,fontWeight:700,borderRadius:4,padding:'1px 6px',letterSpacing:'0.04em'}},t('appBadge')),
+        msg.urgent&&React.createElement('span',{style:{background:'#E53935',color:'#fff',fontSize:10,fontWeight:700,borderRadius:4,padding:'2px 8px',letterSpacing:'0.06em'}},t('urgent')),
         React.createElement('span',{style:{color:'#9BA8B4',fontSize:11}},msg.time)
       ),
       msg.isIngestion && msg.file
@@ -284,17 +286,17 @@ function Message({ msg, isGrouped }) {
         React.createElement('div',{style:{display:'flex',alignItems:'center'}},
           msg.threadAvatars?.slice(0,3).map((a,i)=>React.createElement('div',{key:i,style:{width:20,height:20,borderRadius:'50%',background:a.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',fontWeight:700,border:'2px solid #fff',marginLeft:i>0?-6:0}},a.initials))
         ),
-        React.createElement('button',{type:'button',style:{background:'none',border:'none',cursor:'pointer',color:'#4d0a52',fontSize:12,fontWeight:600,padding:0,display:'inline-flex',alignItems:'center',gap:5}}, I.reply(14, '#4d0a52'), `${msg.threadCount} ${msg.threadCount===1?'reply':'replies'}`),
-        React.createElement('button',{style:{background:'none',border:'none',cursor:'pointer',color:'#8B97A3',fontSize:12,padding:0}},`Follow`)
+        React.createElement('button',{type:'button',style:{background:'none',border:'none',cursor:'pointer',color:'#4d0a52',fontSize:12,fontWeight:600,padding:0,display:'inline-flex',alignItems:'center',gap:5}}, I.reply(14, '#4d0a52'), `${msg.threadCount} ${msg.threadCount===1?t('reply'):t('replies')}`),
+        React.createElement('button',{style:{background:'none',border:'none',cursor:'pointer',color:'#8B97A3',fontSize:12,padding:0}},t('follow'))
       )
     ),
     hov&&I&&React.createElement('div',{style:{position:'absolute',top:-6,right:16,background:'#fff',border:'1px solid #E8ECF0',borderRadius:9,display:'flex',gap:2,padding:'3px 6px',boxShadow:'0 2px 12px rgba(0,0,0,0.12)',zIndex:10}},
       [
-        ['react-smile', () => I.smile(16, '#555'), 'React'],
-        ['react-up', () => I.thumbsUp(16, '#555'), 'Thumbs up'],
-        ['react-reply', () => I.reply(16, '#555'), 'Reply'],
-        ['react-pin', () => I.bookmark(16, '#555'), 'Save'],
-        ['react-more', () => I.dotsHorizontal(16, '#555'), 'More'],
+        ['react-smile', () => I.smile(16, '#555'), t('react')],
+        ['react-up', () => I.thumbsUp(16, '#555'), t('thumbsUp')],
+        ['react-reply', () => I.reply(16, '#555'), t('reply')],
+        ['react-pin', () => I.bookmark(16, '#555'), t('saveMsg')],
+        ['react-more', () => I.dotsHorizontal(16, '#555'), t('more')],
       ].map(([key, render, title]) => React.createElement('button',{key,type:'button',style:{background:'none',border:'none',cursor:'pointer',padding:'4px 6px',borderRadius:6,color:'#555',display:'flex',alignItems:'center'},title}, render()))
     )
   );
@@ -320,28 +322,29 @@ const ASK_KOBI_AI_PREFIX = '/ask-kobikan ';
 
 /* ─── Slash popover ─── */
 function SlashPopover({ input, onSelect }) {
+  const { t } = useKobi();
   const cmds=[
-    {cmd:'/ask',desc:'Ask KobiKan a question',handler:true},
-    {cmd:'/ask-kobikan',desc:'Ask KobiKan (same as AI button)',handler:true},
-    {cmd:'/add-note',desc:'Add a maintenance note',handler:true},
-    {cmd:'/incident',desc:'Log a structured incident',handler:true},
-    {cmd:'/search',desc:'Search messages and docs',handler:true},
-    {cmd:'/assign',desc:'Assign incident to technician',handler:false},
-    {cmd:'/playbook',desc:'Run maintenance playbook',handler:false},
-    {cmd:'/report',desc:'Generate weekly report',handler:false},
+    {cmd:'/ask',desc:t('cmdAsk'),handler:true},
+    {cmd:'/ask-kobikan',desc:t('cmdAskKobi'),handler:true},
+    {cmd:'/add-note',desc:t('cmdAddNote'),handler:true},
+    {cmd:'/incident',desc:t('cmdIncident'),handler:true},
+    {cmd:'/search',desc:t('cmdSearch'),handler:true},
+    {cmd:'/assign',desc:t('cmdAssign'),handler:false},
+    {cmd:'/playbook',desc:t('cmdPlaybook'),handler:false},
+    {cmd:'/report',desc:t('cmdReport'),handler:false},
   ];
   const term=input.slice(1).toLowerCase();
   const filtered=cmds.filter(c=>c.cmd.slice(1).startsWith(term));
   if(!filtered.length) return null;
   return React.createElement('div',{style:{position:'absolute',bottom:'100%',left:0,right:0,background:'#fff',border:'1px solid #E8ECF0',borderRadius:12,boxShadow:'0 -6px 24px rgba(0,0,0,0.12)',zIndex:50,overflow:'hidden',animation:'slideUp 0.15s ease-out',marginBottom:6}},
-    React.createElement('div',{style:{padding:'8px 14px',fontSize:11,fontWeight:700,color:'#9BA8B4',borderBottom:'1px solid #F0F2F4',textTransform:'uppercase',letterSpacing:'0.07em'}},'Commands'),
+    React.createElement('div',{style:{padding:'8px 14px',fontSize:11,fontWeight:700,color:'#9BA8B4',borderBottom:'1px solid #F0F2F4',textTransform:'uppercase',letterSpacing:'0.07em'}},t('commands')),
     filtered.map((c,i)=>React.createElement('button',{key:c.cmd,onClick:()=>onSelect(c),
       style:{display:'flex',alignItems:'center',gap:12,width:'100%',padding:'10px 16px',background:'none',border:'none',textAlign:'left',cursor:'pointer',borderBottom:i<filtered.length-1?'1px solid #F7F9FB':'none'},
       onMouseEnter:e=>e.currentTarget.style.background='#F3EAF5',
       onMouseLeave:e=>e.currentTarget.style.background='none'},
       React.createElement('span',{style:{fontWeight:700,color:'#4d0a52',fontSize:13,minWidth:90}},c.cmd),
       React.createElement('span',{style:{color:'#6B8EAE',fontSize:12}},c.desc),
-      !c.handler&&React.createElement('span',{style:{marginLeft:'auto',fontSize:10,color:'#B0B8C4',fontStyle:'italic'}},'coming soon')
+      !c.handler&&React.createElement('span',{style:{marginLeft:'auto',fontSize:10,color:'#B0B8C4',fontStyle:'italic'}},t('comingSoon'))
     ))
   );
 }
@@ -358,6 +361,7 @@ function VoiceWave({ active }) {
 /* ─── Docs drop zone ─── */
 function DocsDropZone({ onDrop }) {
   const I = window.Icons;
+  const { t } = useKobi();
   const [dragging, setDragging] = useState(false);
   return React.createElement('div',{
     onDragOver:e=>{e.preventDefault();setDragging(true);},
@@ -366,15 +370,16 @@ function DocsDropZone({ onDrop }) {
     style:{margin:'14px 18px',padding:'28px 24px',border:`2px dashed ${dragging?'#4d0a52':'#C5D0DB'}`,borderRadius:14,background:dragging?'#F3EAF5':'#F7F9FB',textAlign:'center',transition:'all 0.2s',cursor:'pointer'}
   },
     React.createElement('div',{style:{display:'flex',justifyContent:'center',marginBottom:10}}, I && I.upload(36, '#4d0a52')),
-    React.createElement('div',{style:{fontWeight:700,color:'#1A2433',fontSize:15,marginBottom:4}},'Drop documents here to feed the AI'),
-    React.createElement('div',{style:{fontSize:13,color:'#8B97A3',marginBottom:6}},'PDFs · Schematics · Manuals · Images'),
-    React.createElement('div',{style:{fontSize:12,color:'#4CAF50',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}, I && I.lock(14, '#4CAF50'), 'Files stay on-prem. Nothing leaves this factory.')
+    React.createElement('div',{style:{fontWeight:700,color:'#1A2433',fontSize:15,marginBottom:4}},t('dropDocs')),
+    React.createElement('div',{style:{fontSize:13,color:'#8B97A3',marginBottom:6}},t('dropFormats')),
+    React.createElement('div',{style:{fontSize:12,color:'#4CAF50',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}, I && I.lock(14, '#4CAF50'), t('dropOnPrem'))
   );
 }
 
 /* ─── Composer ─── */
 function Composer({ channelName, onSend, onVoice, voiceActive, input, setInput, onSlashSelect, inputRef, showSlash }) {
   const I = window.Icons;
+  const { t } = useKobi();
   const fmtBtns = [
     ['B',()=>{},'font-weight:700'],['I',()=>{},'font-style:italic'],
     ['S',()=>{},'text-decoration:line-through'],
@@ -397,10 +402,10 @@ function Composer({ channelName, onSend, onVoice, voiceActive, input, setInput, 
         React.createElement('textarea',{
           ref:inputRef, value:input, onChange:e=>setInput(e.target.value),
           onKeyDown:e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();onSend();}},
-          placeholder:`Write to #${channelName}`, rows:1,
+          placeholder:`${t('writeTo')} #${channelName}`, rows:1,
           style:{flex:1,background:'none',border:'none',outline:'none',resize:'none',fontSize:14,color:'#1A2433',lineHeight:1.6,maxHeight:120,overflow:'auto',fontFamily:'inherit',paddingTop:2}
         }),
-        React.createElement('button',{type:'button',title:'Ask KobiKan',onClick:()=>{setInput(ASK_KOBI_AI_PREFIX);inputRef.current?.focus();},
+        React.createElement('button',{type:'button',title:t('askKobiKan'),onClick:()=>{setInput(ASK_KOBI_AI_PREFIX);inputRef.current?.focus();},
           style:{background:'#F3EAF5',border:'none',cursor:'pointer',padding:'6px 8px',borderRadius:8,color:'#4d0a52',transition:'all 0.2s',flexShrink:0,display:'flex',alignItems:'center'}},
           I&&I.sparkles(18,'#4d0a52')
         ),
@@ -414,7 +419,7 @@ function Composer({ channelName, onSend, onVoice, voiceActive, input, setInput, 
         )
       )
     ),
-    React.createElement('div',{style:{fontSize:11,color:'#B0B8C4',marginTop:5,paddingLeft:4}},'Type / for commands · @kobi to ask AI')
+    React.createElement('div',{style:{fontSize:11,color:'#B0B8C4',marginTop:5,paddingLeft:4}},t('composerHint'))
   );
 }
 
@@ -528,9 +533,11 @@ function BreadcrumbRow({ parts, compact }) {
 /* ─── Main ChatView ─── */
 function ChatView() {
   const I = window.Icons;
-  const { activeChannel, setActiveChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, rightPanel, setRightPanel, setShowSearchOverlay, t, role, language, deviceMode, activeWorkspaceId, channelReturnContext, setChannelReturnContext } = useKobi();
+  const { activeChannel, setActiveChannel, messages, addMessage, notesAdded, setNotesAdded, addToast, rightPanel, setRightPanel, setShowSearchOverlay, t, role, language, deviceMode, activeWorkspaceId, channelReturnContext, setChannelReturnContext, getLocalized } = useKobi();
   const compact = deviceMode === 'mobile' || deviceMode === 'tablet';
-  const { channels, users, machines, botResponses, botResponsesSk, voicePrefills } = window.KobiData;
+  const localized = getLocalized();
+  const { channels, users, botResponses, botResponsesSk } = window.KobiData;
+  const voicePrefills = localized.voicePrefills;
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const [voiceActive, setVoiceActive] = useState(false);
@@ -543,7 +550,11 @@ function ChatView() {
 
   const channel = channels.find(ch => ch.slug === activeChannel);
   const channelMessages = messages[activeChannel] || [];
+  const machines = localized.machines;
   const machine = channel?.machineId ? machines[channel.machineId] : null;
+
+  const purposeKeyMap = { general: 'purposeGeneral', incidents: 'purposeIncidents', 'docs-drop': 'purposeDocsDrop' };
+  const channelPurpose = channel ? (purposeKeyMap[channel.slug] ? t(purposeKeyMap[channel.slug]) : (channel.machineId ? t('purposeMachine') : channel.purpose)) : '';
 
   useEffect(() => {
     if (activeChannel !== 'docs-drop' && setChannelReturnContext) setChannelReturnContext(null);
@@ -565,20 +576,19 @@ function ChatView() {
   const getBotResponse = useCallback((userText) => {
     const slug = activeChannel;
     const key = slug.replace('machine-','').split('-')[0];
-    const isSk = language === 'sk';
-    const responseMap = isSk ? (botResponsesSk || botResponses) : botResponses;
+    const responseMap = { sk: botResponsesSk }[language] || botResponses;
     const pool = responseMap[key] || responseMap.siemens || botResponses[key] || botResponses.siemens || [];
     const matched = pool.find(r => r.trigger?.some(tk => userText.toLowerCase().includes(tk.toLowerCase())));
-    const fallbackText = isSk ? 'Som pripravený pomôcť. Môžete upresniť svoju otázku?' : 'I\'m ready to help. Could you clarify your question?';
+    const fallbackText = t('botFallback');
     const response = matched || pool[0] || { markdown: fallbackText, sources: [] };
-    const noteSource = isSk
+    const noteSource = language === 'sk'
       ? { title:'Vaša poznámka (práve teraz)', ref:'Pridané vami · dnes', isNote:true }
       : { title:'Your note (just now)', ref:'Added by you · today', isNote:true };
     const sources = notesAdded
       ? [noteSource, ...(response.sources||[])]
       : (response.sources||[]);
     return { ...response, sources };
-  }, [activeChannel, notesAdded, language, botResponses, botResponsesSk]);
+  }, [activeChannel, notesAdded, language, botResponses, botResponsesSk, t]);
 
   const sendMessage = useCallback(async (text) => {
     if (!text.trim()) return;
@@ -617,7 +627,7 @@ function ChatView() {
   };
 
   const handleSlashSelect = (cmd) => {
-    if (!cmd.handler) { addToast('Coming in production 🚀','info'); setInput(''); return; }
+    if (!cmd.handler) { addToast(t('comingProduction'),'info'); setInput(''); return; }
     if (cmd.cmd==='/add-note') { setInput(''); setShowAddNote(true); return; }
     if (cmd.cmd==='/incident') { setInput(''); setRightPanel({ type: 'incident', machineId: channel?.machineId || null }); return; }
     if (cmd.cmd==='/search') { setInput(''); setShowSearchOverlay(true); return; }
@@ -652,7 +662,7 @@ function ChatView() {
     const tagCh = returnCh ? channels.find((c) => c.slug === returnCh) : null;
     const machineTag = tagCh ? `#${tagCh.name}` : '#machine-siemens-s7-1500';
     addMessage('docs-drop',{id:Date.now()+'doc',userId:'kobi',time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),isBot:true,isIngestion:true,file:{name:file.name,size:sizeMB,pages,chunks:pages*4,diagrams:Math.round(pages*0.1),machine:machineTag,status:'parsing', previewUrl, previewKind }});
-    addToast('Document received. Indexing…','info');
+    addToast(t('documentReceived'),'info');
   };
 
   const handleMachineAction = (action) => {
@@ -670,7 +680,7 @@ function ChatView() {
   const handleNoteSubmit = (note) => {
     setShowAddNote(false); setNotesAdded(true); addToast(t('noteSaved'));
     const userId=role==='manager'?'martin':'jozef';
-    addMessage(activeChannel,{id:Date.now()+'note',userId:'kobi',time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),isBot:true,markdown:`🧠 **New knowledge added by @${userId}** — *just now*\n_"${note.text}"_\nCategory: ${note.category} · Severity: ${note.severity} · Indexed in 2.1s · Now searchable.`,sources:[]});
+    addMessage(activeChannel,{id:Date.now()+'note',userId:'kobi',time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),isBot:true,markdown:`🧠 **${t('noteAddedTitle')} @${userId}** — *${t('noteAddedJustNow')}*\n_"${note.text}"_\n${t('noteCategory')}: ${note.category} · ${t('noteSeverity')}: ${note.severity} · ${t('noteIndexedIn')}`,sources:[]});
   };
 
   const isDashboard = activeChannel==='dashboard';
@@ -692,7 +702,7 @@ function ChatView() {
           React.createElement('span',{style:{display:'flex',flexShrink:0}}, I && I.channelHeaderIcon(channel, 20, '#1A2433')),
           React.createElement('div',{style:{minWidth:0,flex:'1 1 140px'}},
             React.createElement('div',{style:{fontWeight:700,fontSize:compact?14:15,color:'#1A2433'}},channel.name),
-            React.createElement('div',{style:{fontSize:11,color:'#9BA8B4',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:compact?'nowrap':'normal',maxWidth:compact?'100%':'none'}},`${channel.members} ${t('members')}${channel.purpose?` · ${channel.purpose.slice(0, compact?36:50)}`:''}`)
+            React.createElement('div',{style:{fontSize:11,color:'#9BA8B4',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:compact?'nowrap':'normal',maxWidth:compact?'100%':'none'}},`${channel.members} ${t('members')}${channelPurpose?` · ${channelPurpose.slice(0, compact?36:50)}`:''}`)
           )
         )
       ),
@@ -700,12 +710,12 @@ function ChatView() {
       isDocsChannel && channelReturnContext && React.createElement('div', {
         style: { padding: '8px 18px', background: '#F3EAF5', borderBottom: '1px solid #E8D4ED', fontSize: 12, color: '#4A1942', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' },
       },
-        React.createElement('span', null, 'Uploading in context of ', React.createElement('strong', null, channelReturnContext.machineName), ' — documents will be tagged for that line.'),
+        React.createElement('span', null, t('uploadingContext'), ' ', React.createElement('strong', null, channelReturnContext.machineName), ' ', t('uploadingContextSuffix')),
         React.createElement('button', {
           type: 'button',
           onClick: () => { setChannelReturnContext(null); setActiveChannel(channelReturnContext.fromChannelSlug); },
           style: { background: '#4d0a52', border: 'none', color: '#fff', fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 8, cursor: 'pointer', flexShrink: 0 },
-        }, 'Back to machine channel')
+        }, t('backToMachineChannel'))
       )
     ),
 

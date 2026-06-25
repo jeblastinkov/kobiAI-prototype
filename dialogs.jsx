@@ -69,42 +69,50 @@ function SegCtrl({ options, value, onChange }) {
 /* ─── AddNote dialog ─── */
 
 function AddNoteDialog({ machine, onSave, onClose }) {
-  const { t } = useKobi();
+  const { t, language } = useKobi();
   const I = window.Icons;
   const [category, setCategory] = useState('Repair');
   const [text, setText] = useState('');
   const [severity, setSeverity] = useState('info');
   const [photo, setPhoto] = useState(false);
-  const voiceText = 'Replaced timing belt 3M-225-6. Re-tensioned to 4.5 N — factory spec says 4 but it slips under high feed. Confirmed with test cut O0001.';
+  const voiceText = language === 'sk'
+    ? 'Vymenený remeň 3M-225-6. Dotiahnuté na 4,5 N — továrenská špecifikácia hovorí 4, ale pri vysokom posuve kĺže. Potvrdené testovacím rezom O0001.'
+    : 'Replaced timing belt 3M-225-6. Re-tensioned to 4.5 N — factory spec says 4 but it slips under high feed. Confirmed with test cut O0001.';
+  const categories = [
+    { v: 'Repair', l: t('catRepair') },
+    { v: 'Observation', l: t('catObservation') },
+    { v: 'Tip', l: t('catTip') },
+    { v: 'Incident note', l: t('catIncidentNote') },
+  ];
 
-  return React.createElement(Modal, { title: React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } }, I && I.brain(20, '#4d0a52'), 'Add Maintenance Note'), subtitle:'Captured knowledge is immediately searchable by the AI', onClose,
+  return React.createElement(Modal, { title: React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } }, I && I.brain(20, '#4d0a52'), t('addNoteTitle')), subtitle: t('addNoteSubtitle'), onClose,
     footer: React.createElement(React.Fragment, null,
       React.createElement('button', { onClick:onClose, style:{padding:'9px 18px',border:'1px solid #C5D0DB',borderRadius:9,background:'#fff',cursor:'pointer',fontSize:13,color:'#555'} }, t('cancel')),
       React.createElement('button', { onClick:()=>{ if(text.trim()) onSave({text:text.trim(),category,severity}); }, disabled:!text.trim(),
         style:{padding:'9px 22px',background:text.trim()?'#4d0a52':'#C5D0DB',border:'none',borderRadius:9,color:'#fff',fontWeight:700,cursor:text.trim()?'pointer':'default',fontSize:13} }, t('save'))
     )
   },
-    React.createElement(Field, { label:'Machine' },
+    React.createElement(Field, { label: t('fieldMachine') },
       React.createElement('div', { style:{display:'inline-flex',alignItems:'center',gap:8,background:'#F3EAF5',border:'1px solid #C9A8D0',borderRadius:8,padding:'6px 14px',fontSize:14,color:'#4d0a52',fontWeight:600} },
         window.Icons && window.Icons.gear(16,'#4d0a52'),
-        machine?.name || 'Current Machine'
+        machine?.name || t('currentMachine')
       )
     ),
-    React.createElement(Field, { label:'Category' },
+    React.createElement(Field, { label: t('fieldCategory') },
       React.createElement('select', { value:category, onChange:e=>setCategory(e.target.value),
         style:{width:'100%',padding:'10px 12px',border:'1px solid #C5D0DB',borderRadius:10,fontSize:14,color:'#1A2433',background:'#FAFBFC',outline:'none'} },
-        ['Repair','Observation','Tip','Incident note'].map(c=>React.createElement('option',{key:c},c)))
+        categories.map(c=>React.createElement('option',{key:c.v,value:c.v},c.l)))
     ),
-    React.createElement(Field, { label:'What happened', required:true, hint:'or use voice input' },
-      React.createElement(VoiceTextArea, { value:text, onChange:setText, placeholder:'Describe what you saw or what you fixed…', rows:4, voiceText })
+    React.createElement(Field, { label: t('fieldWhatHappened'), required:true, hint: t('fieldWhatHint') },
+      React.createElement(VoiceTextArea, { value:text, onChange:setText, placeholder: t('describePlaceholder'), rows:4, voiceText })
     ),
-    React.createElement(Field, { label:'Severity' },
+    React.createElement(Field, { label: t('fieldSeverity') },
       React.createElement(SegCtrl, { value:severity, onChange:setSeverity,
-        options:[{value:'info',label:'Info',color:'#1E88E5'},{value:'warning',label:'Warning',color:'#FB8C00'},{value:'critical',label:'Critical',color:'#E53935'}] })
+        options:[{value:'info',label:t('sevInfo'),color:'#1E88E5'},{value:'warning',label:t('sevWarning'),color:'#FB8C00'},{value:'critical',label:t('sevCritical'),color:'#E53935'}] })
     ),
-    React.createElement(Field, { label:'Photo (optional)' },
+    React.createElement(Field, { label: t('fieldPhoto') },
       !photo
-        ? React.createElement('button', { type:'button', onClick:()=>setPhoto(true), style:{padding:'8px 16px',border:'1.5px dashed #C5D0DB',borderRadius:9,background:'#FAFBFC',cursor:'pointer',fontSize:13,color:'#6B8EAE',display:'inline-flex',alignItems:'center',gap:8} }, I && I.camera(16, '#6B8EAE'), 'Attach photo')
+        ? React.createElement('button', { type:'button', onClick:()=>setPhoto(true), style:{padding:'8px 16px',border:'1.5px dashed #C5D0DB',borderRadius:9,background:'#FAFBFC',cursor:'pointer',fontSize:13,color:'#6B8EAE',display:'inline-flex',alignItems:'center',gap:8} }, I && I.camera(16, '#6B8EAE'), t('attachPhoto'))
         : React.createElement('div', { style:{display:'flex',alignItems:'center',gap:10,padding:'8px 12px',background:'#F3EAF5',border:'1px solid #C9A8D0',borderRadius:9} },
             React.createElement('div', { style:{width:44,height:32,background:'repeating-linear-gradient(45deg,#C9A8D0,#C9A8D0 2px,#EDE0EF 2px,#EDE0EF 6px)',borderRadius:5} }),
             React.createElement('span', { style:{fontSize:13,color:'#4d0a52'} }, 'IMG_20260420_104532.jpg'),
@@ -117,7 +125,7 @@ function AddNoteDialog({ machine, onSave, onClose }) {
 /* ─── Incident form (shared: modal + right slide panel) ─── */
 
 function IncidentFormContent({ machine, onSubmit, onClose }) {
-  const { t, role } = useKobi();
+  const { t, role, language } = useKobi();
   const I = window.Icons;
   const [tab, setTab] = useState('details');
   const [form, setForm] = useState({
@@ -125,7 +133,14 @@ function IncidentFormContent({ machine, onSubmit, onClose }) {
     component:'', resolution:'Repaired', resolutionNotes:'', resolutionType:'Permanent', parts:[],
     owner: role === 'manager' ? 'Martin Horváth' : 'Jozef Novák',
   });
-  const [tasks, setTasks] = useState([
+  const [tasks, setTasks] = useState(() => language === 'sk' ? [
+    { id:1, label:'Bezpečnostná kontrola dokončená',         done:false },
+    { id:2, label:'Identifikovaná hlavná príčina',           done:false },
+    { id:3, label:'Požadované diely dostupné',        done:false },
+    { id:4, label:'Oprava / výmena dokončená',  done:false },
+    { id:5, label:'Testovací beh OK',                 done:false },
+    { id:6, label:'Supervízor informovaný',             done:false },
+  ] : [
     { id:1, label:'Safety check completed',         done:false },
     { id:2, label:'Root cause identified',           done:false },
     { id:3, label:'Required parts available',        done:false },
@@ -137,8 +152,12 @@ function IncidentFormContent({ machine, onSubmit, onClose }) {
   const toggleTask = id => setTasks(ts => ts.map(t => t.id===id ? {...t,done:!t.done} : t));
   const doneTasks = tasks.filter(t=>t.done).length;
 
-  const voiceDesc = 'Timing belt snapped mid-cut on axis 3. Machine stopped. No injury. Belt replaced with 3M-225-6, tension 4.5 N. Test cut O0001 passed.';
-  const voiceRes  = 'Belt replaced and tensioned to 4.5 N. Machine back in service. Test cut nominal.';
+  const voiceDesc = language === 'sk'
+    ? 'Remeň praskol počas rezu na osi 3. Stroj zastavil. Bez zranenia. Remeň vymenený 3M-225-6, napätie 4,5 N. Testovací rez O0001 OK.'
+    : 'Timing belt snapped mid-cut on axis 3. Machine stopped. No injury. Belt replaced with 3M-225-6, tension 4.5 N. Test cut O0001 passed.';
+  const voiceRes  = language === 'sk'
+    ? 'Remeň vymenený a dotiahnutý na 4,5 N. Stroj späť v prevádzke. Testovací rez v norme.'
+    : 'Belt replaced and tensioned to 4.5 N. Machine back in service. Test cut nominal.';
 
   const participants = [
     {initials:'JN',color:'#2E7D32'},{initials:'MH',color:'#1565C0'},{initials:'PK',color:'#6A1B9A'}
@@ -148,30 +167,30 @@ function IncidentFormContent({ machine, onSubmit, onClose }) {
     /* Owner + Participants row */
     React.createElement('div', { style:{display:'flex',gap:24,marginBottom:20,padding:'14px 16px',background:'#F7F9FB',borderRadius:12,border:'1px solid #EBEEF2'} },
       React.createElement('div', null,
-        React.createElement('div', { style:{fontSize:11,fontWeight:700,color:'#9BA8B4',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8} }, 'Owner'),
+        React.createElement('div', { style:{fontSize:11,fontWeight:700,color:'#9BA8B4',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8} }, t('owner')),
         React.createElement('div', { style:{display:'flex',alignItems:'center',gap:8,background:'#fff',border:'1px solid #C5D0DB',borderRadius:20,padding:'5px 12px',fontSize:13,fontWeight:600,color:'#1A2433'} },
           React.createElement('div', { style:{width:24,height:24,borderRadius:'50%',background:role==='manager'?'#1565C0':'#2E7D32',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:'#fff',fontWeight:700} }, role==='manager'?'MH':'JN'),
           form.owner
         )
       ),
       React.createElement('div', null,
-        React.createElement('div', { style:{fontSize:11,fontWeight:700,color:'#9BA8B4',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8} }, 'Participants'),
+        React.createElement('div', { style:{fontSize:11,fontWeight:700,color:'#9BA8B4',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8} }, t('participants')),
         React.createElement('div', { style:{display:'flex',alignItems:'center',gap:4} },
           participants.map((p,i) => React.createElement('div', { key:i, style:{width:30,height:30,borderRadius:'50%',background:p.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#fff',fontWeight:700,border:'2px solid #fff',marginLeft:i>0?-8:0} }, p.initials)),
           React.createElement('div', { style:{width:30,height:30,borderRadius:'50%',background:'#E8ECF0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,color:'#6B8EAE',border:'2px solid #fff',marginLeft:-8} }, '+')
         )
       ),
       React.createElement('div', { style:{marginLeft:'auto'} },
-        React.createElement('div', { style:{fontSize:11,fontWeight:700,color:'#9BA8B4',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8} }, 'Machine'),
+        React.createElement('div', { style:{fontSize:11,fontWeight:700,color:'#9BA8B4',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8} }, t('machineLabel')),
         React.createElement('div', { style:{display:'inline-flex',alignItems:'center',gap:6,background:'#F3EAF5',border:'1px solid #C9A8D0',borderRadius:8,padding:'5px 12px',fontSize:13,color:'#4d0a52',fontWeight:600} },
-          machine?.name || 'Machine'
+          machine?.name || t('machineLabel')
         )
       )
     ),
 
     /* Tabs */
     React.createElement('div', { style:{display:'flex',gap:0,marginBottom:20,borderBottom:'1px solid #EBEEF2'} },
-      [['details','Incident Details'],['tasks','Resolution Tasks'],['parts','Parts & Notes']].map(([id,lbl]) =>
+      [['details', t('tabDetails')], ['tasks', t('tabTasks')], ['parts', t('tabParts')]].map(([id,lbl]) =>
         React.createElement('button', { key:id, onClick:()=>setTab(id),
           style:{padding:'9px 20px',background:'none',border:'none',borderBottom:tab===id?'2px solid #4d0a52':'2px solid transparent',color:tab===id?'#4d0a52':'#8B97A3',fontWeight:tab===id?700:400,cursor:'pointer',fontSize:13,transition:'all 0.15s'} },
           lbl)
@@ -180,20 +199,20 @@ function IncidentFormContent({ machine, onSubmit, onClose }) {
 
     /* Tab: Details */
     tab==='details' && React.createElement(React.Fragment, null,
-      React.createElement(Field, { label:'Location in machine', hint:'e.g. Motor module slot 4' },
-        React.createElement('input', { value:form.location, onChange:e=>setField('location',e.target.value), placeholder:'Hall A, Line 3 — axis 3',
+      React.createElement(Field, { label: t('fieldLocation'), hint: t('fieldLocationHint') },
+        React.createElement('input', { value:form.location, onChange:e=>setField('location',e.target.value), placeholder: t('locationPlaceholder'),
           style:{width:'100%',padding:'10px 12px',border:'1px solid #C5D0DB',borderRadius:10,fontSize:14,outline:'none',background:'#FAFBFC',boxSizing:'border-box'} })
       ),
-      React.createElement(Field, { label:'Fault description', required:true },
-        React.createElement(VoiceTextArea, { value:form.description, onChange:v=>setField('description',v), placeholder:'Describe the fault, symptoms, and what you observed…', rows:4, voiceText:voiceDesc })
+      React.createElement(Field, { label: t('fieldFaultDesc'), required:true },
+        React.createElement(VoiceTextArea, { value:form.description, onChange:v=>setField('description',v), placeholder: t('faultPlaceholder'), rows:4, voiceText:voiceDesc })
       ),
-      React.createElement(Field, { label:'Severity' },
+      React.createElement(Field, { label: t('fieldSeverity') },
         React.createElement(SegCtrl, { value:form.severity, onChange:v=>setField('severity',v),
-          options:[{value:'info',label:'Info',color:'#1E88E5'},{value:'warning',label:'Warning',color:'#FB8C00'},{value:'critical',label:'Critical',color:'#E53935'}] })
+          options:[{value:'info',label:t('sevInfo'),color:'#1E88E5'},{value:'warning',label:t('sevWarning'),color:'#FB8C00'},{value:'critical',label:t('sevCritical'),color:'#E53935'}] })
       ),
-      React.createElement(Field, { label:'Component identified' },
+      React.createElement(Field, { label: t('fieldComponent') },
         React.createElement(React.Fragment, null,
-          React.createElement('input', { value:form.component, onChange:e=>setField('component',e.target.value), placeholder:'e.g., Timing belt (3M-225-6)', list:'comp-list',
+          React.createElement('input', { value:form.component, onChange:e=>setField('component',e.target.value), placeholder: t('componentPlaceholder'), list:'comp-list',
             style:{width:'100%',padding:'10px 12px',border:'1px solid #C5D0DB',borderRadius:10,fontSize:14,outline:'none',background:'#FAFBFC',boxSizing:'border-box'} }),
           React.createElement('datalist', { id:'comp-list' },
             ['Timing belt (3M-225-6)','Servo drive','Proximity sensor SICK IME30','Welding tip WA-120','Motor 1FK7083-5AF71','Vacuum sealing strip'].map(c=>React.createElement('option',{key:c,value:c})))
@@ -204,8 +223,8 @@ function IncidentFormContent({ machine, onSubmit, onClose }) {
     /* Tab: Tasks checklist */
     tab==='tasks' && React.createElement('div', null,
       React.createElement('div', { style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12} },
-        React.createElement('div', { style:{fontSize:14,fontWeight:700,color:'#1A2433'} }, 'Resolution Checklist'),
-        React.createElement('div', { style:{fontSize:13,color:'#4d0a52',fontWeight:600} }, `${doneTasks} / ${tasks.length} done`)
+        React.createElement('div', { style:{fontSize:14,fontWeight:700,color:'#1A2433'} }, t('resolutionChecklist')),
+        React.createElement('div', { style:{fontSize:13,color:'#4d0a52',fontWeight:600} }, `${doneTasks} / ${tasks.length} ${t('tasksDone')}`)
       ),
       /* Progress bar */
       React.createElement('div', { style:{height:5,background:'#EBEEF2',borderRadius:3,marginBottom:18,overflow:'hidden'} },
@@ -222,38 +241,38 @@ function IncidentFormContent({ machine, onSubmit, onClose }) {
       ),
       React.createElement('div', { style:{marginTop:18,padding:'12px 14px',background:'#FFF8E1',border:'1px solid #FFE082',borderRadius:10,fontSize:13,color:'#795548',display:'flex',gap:10,alignItems:'flex-start'} },
         I && I.help(18, '#795548'),
-        React.createElement('span', null, 'Complete all tasks before submitting for approval to ensure compliance tracking.')
+        React.createElement('span', null, t('tasksCompliance'))
       )
     ),
 
     /* Tab: Parts & Notes */
     tab==='parts' && React.createElement(React.Fragment, null,
-      React.createElement(Field, { label:'Resolution type' },
+      React.createElement(Field, { label: t('resolutionType') },
         React.createElement(SegCtrl, { value:form.resolutionType, onChange:v=>setField('resolutionType',v),
-          options:[{value:'Permanent',label:'Permanent',color:'#2E7D32'},{value:'Temporary',label:'Temporary',color:'#FB8C00'}] })
+          options:[{value:'Permanent',label:t('resolutionPermanent'),color:'#2E7D32'},{value:'Temporary',label:t('resolutionTemporary'),color:'#FB8C00'}] })
       ),
-      React.createElement(Field, { label:'Resolution notes' },
-        React.createElement(VoiceTextArea, { value:form.resolutionNotes, onChange:v=>setField('resolutionNotes',v), placeholder:'What was done to resolve the issue?', rows:3, voiceText:voiceRes })
+      React.createElement(Field, { label: t('resolutionNotes') },
+        React.createElement(VoiceTextArea, { value:form.resolutionNotes, onChange:v=>setField('resolutionNotes',v), placeholder: t('resolutionNotesPlaceholder'), rows:3, voiceText:voiceRes })
       ),
-      React.createElement(Field, { label:'Spare parts used' },
+      React.createElement(Field, { label: t('sparePartsUsed') },
         React.createElement('div', null,
           form.parts.map((p,i) =>
             React.createElement('div', { key:i, style:{display:'flex',gap:8,marginBottom:8} },
-              React.createElement('input', { value:p.part, onChange:e=>setField('parts',form.parts.map((x,j)=>j===i?{...x,part:e.target.value}:x)), placeholder:'Part name',
+              React.createElement('input', { value:p.part, onChange:e=>setField('parts',form.parts.map((x,j)=>j===i?{...x,part:e.target.value}:x)), placeholder: t('partName'),
                 style:{flex:1,padding:'9px 11px',border:'1px solid #C5D0DB',borderRadius:9,fontSize:13,outline:'none'} }),
-              React.createElement('input', { value:p.qty, onChange:e=>setField('parts',form.parts.map((x,j)=>j===i?{...x,qty:e.target.value}:x)), placeholder:'Qty', type:'number',
+              React.createElement('input', { value:p.qty, onChange:e=>setField('parts',form.parts.map((x,j)=>j===i?{...x,qty:e.target.value}:x)), placeholder: t('qty'), type:'number',
                 style:{width:64,padding:'9px 10px',border:'1px solid #C5D0DB',borderRadius:9,fontSize:13,outline:'none'} }),
               React.createElement('button', { onClick:()=>setField('parts',form.parts.filter((_,j)=>j!==i)), style:{background:'none',border:'none',cursor:'pointer',color:'#F44336',fontSize:18,padding:'0 4px'} }, '×')
             )
           ),
           React.createElement('button', { onClick:()=>setField('parts',[...form.parts,{part:'',qty:1}]),
-            style:{padding:'7px 14px',border:'1.5px dashed #C5D0DB',borderRadius:9,background:'none',cursor:'pointer',fontSize:13,color:'#6B8EAE'} }, '+ Add part')
+            style:{padding:'7px 14px',border:'1.5px dashed #C5D0DB',borderRadius:9,background:'none',cursor:'pointer',fontSize:13,color:'#6B8EAE'} }, t('addPart'))
         )
       )
     ),
     React.createElement('div', { style:{display:'flex',flexWrap:'wrap',alignItems:'center',gap:10,marginTop:22,paddingTop:16,borderTop:'1px solid #EBEEF2'} },
-      React.createElement('div', { style:{fontSize:12,color:'#9BA8B4',marginRight:'auto'} }, `${doneTasks}/${tasks.length} tasks checked`),
-      React.createElement('button', { type:'button', onClick:onClose, style:{padding:'9px 18px',border:'1px solid #C5D0DB',borderRadius:9,background:'#fff',cursor:'pointer',fontSize:13,color:'#555'} }, 'Save draft'),
+      React.createElement('div', { style:{fontSize:12,color:'#9BA8B4',marginRight:'auto'} }, `${doneTasks}/${tasks.length} ${t('tasksChecked')}`),
+      React.createElement('button', { type:'button', onClick:onClose, style:{padding:'9px 18px',border:'1px solid #C5D0DB',borderRadius:9,background:'#fff',cursor:'pointer',fontSize:13,color:'#555'} }, t('saveDraft')),
       React.createElement('button', { type:'button', onClick:()=>{ if(form.description.trim()) onSubmit(form); }, disabled:!form.description.trim(),
         style:{padding:'9px 24px',background:form.description.trim()?'#E53935':'#C5D0DB',border:'none',borderRadius:9,color:'#fff',fontWeight:700,cursor:form.description.trim()?'pointer':'default',fontSize:13} }, t('submit'))
     )
@@ -261,10 +280,11 @@ function IncidentFormContent({ machine, onSubmit, onClose }) {
 }
 
 function IncidentDialog({ machine, onSubmit, onClose }) {
+  const { t } = useKobi();
   const I = window.Icons;
   return React.createElement(Modal, {
-    title: React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } }, I && I.alert(20, '#E53935'), 'Log Incident'),
-    subtitle: 'Structured maintenance record · auto-posts to #incidents',
+    title: React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 10 } }, I && I.alert(20, '#E53935'), t('logIncidentTitle')),
+    subtitle: t('incidentSubtitle'),
     width: 700,
     onClose,
     footer: null,
@@ -280,7 +300,7 @@ function IncidentDialog({ machine, onSubmit, onClose }) {
 function IncidentFormShell({ machineId, onClose, variant }) {
   const isMain = variant === 'main';
   const I = window.Icons;
-  const { t, addMessage, activeChannel, addToast, setOpenIncidentCount, role } = useKobi();
+  const { t, addMessage, activeChannel, addToast, setOpenIncidentCount, role, language } = useKobi();
   const { channels, machines } = window.KobiData;
   const channel = channels.find((c) => c.slug === activeChannel);
   const machine = (machineId && machines[machineId]) || (channel?.machineId ? machines[channel.machineId] : null);
@@ -301,7 +321,9 @@ function IncidentFormShell({ machineId, onClose, variant }) {
       userId: 'kobi',
       time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
       isBot: true,
-      markdown: `🚨 **Incident ${incId} opened by @${userId}**\nMachine: ${machine?.name || 'Machine'} · Severity: ${inc.severity} · Status: **Awaiting approval**\n_"${inc.description}"_\n*View in Logbook →*`,
+      markdown: language === 'sk'
+        ? `🚨 **${t('incidentOpened')} @${userId} — ${incId}**\nStroj: ${machine?.name || t('machineLabel')} · ${t('noteSeverity')}: ${inc.severity} · Stav: **${t('incidentAwaiting')}**\n_"${inc.description}"_\n*${t('viewInLogbook')}*`
+        : `🚨 **Incident ${incId} opened by @${userId}**\nMachine: ${machine?.name || 'Machine'} · Severity: ${inc.severity} · Status: **Awaiting approval**\n_"${inc.description}"_\n*View in Logbook →*`,
       sources: [],
     });
     addMessage('incidents', {
@@ -314,7 +336,7 @@ function IncidentFormShell({ machineId, onClose, variant }) {
         severity: inc.severity,
         status: 'awaiting-approval',
         openedBy: userId,
-        opened: 'just now',
+        opened: language === 'sk' ? 'práve teraz' : 'just now',
         notes: inc.description,
         resolution: inc.resolution,
       },
@@ -364,7 +386,7 @@ function IncidentFormShell({ machineId, onClose, variant }) {
     React.createElement('div', { style: headerStyle },
       React.createElement('div', { style: { minWidth: 0 } },
         React.createElement('div', { style: titleRowStyle }, I && I.alert(isMain ? 20 : 18, '#E53935'), t('incident')),
-        React.createElement('div', { style: subtitleStyle }, 'Structured maintenance record · auto-posts to #incidents')
+        React.createElement('div', { style: subtitleStyle }, t('incidentSubtitle'))
       ),
       React.createElement('button', { type: 'button', onClick: onClose, style: { background: 'none', border: 'none', cursor: 'pointer', color: '#8B97A3', fontSize: 22, lineHeight: 1, flexShrink: 0, padding: 2 } }, '×')
     ),
@@ -398,16 +420,16 @@ function OnPremModal() {
       React.createElement('div', { style:{display:'flex',justifyContent:'center',marginBottom:14} }, I && I.general(56, '#4d0a52')),
       React.createElement('div', { style:{fontWeight:800,fontSize:22,color:'#1A2433',marginBottom:14} }, t('onPremTitle')||'Your data never leaves this factory.'),
       React.createElement('div', { style:{fontSize:15,color:'#555',lineHeight:1.75,marginBottom:20} },
-        'KobiKan runs entirely on your infrastructure. No cloud, no outbound traffic, no data shared with any third party.',
+        t('onPremBody1'),
         React.createElement('br'),React.createElement('br'),
-        'Every document, every question, every log stays on your server — inside your firewall, under your control.'
+        t('onPremBody2')
       ),
       React.createElement('div', { style:{display:'flex',gap:10,justifyContent:'center',marginBottom:18,flexWrap:'wrap'} },
-        ['On-Premise','Air-Gapped Capable','ISO 27001 / TISAX Ready'].map(b =>
+        [t('badgeOnPrem'), t('badgeAirGap'), t('badgeIso')].map(b =>
           React.createElement('span', { key:b, style:{background:'#F3EAF5',border:'1px solid #C9A8D0',borderRadius:20,padding:'6px 14px',fontSize:13,color:'#4d0a52',fontWeight:600} }, b)
         )
       ),
-      React.createElement('div', { style:{fontSize:12,color:'#8B97A3',borderTop:'1px solid #EBEEF2',paddingTop:14} }, 'Delivered as an on-prem appliance by Touch4IT · NIST · ISO 27001 · ISO 14001')
+      React.createElement('div', { style:{fontSize:12,color:'#8B97A3',borderTop:'1px solid #EBEEF2',paddingTop:14} }, t('onPremFooter'))
     )
   );
 }
@@ -415,16 +437,22 @@ function OnPremModal() {
 /* ─── Search overlay ─── */
 
 function SearchOverlay() {
-  const { showSearchOverlay, setShowSearchOverlay } = useKobi();
+  const { showSearchOverlay, setShowSearchOverlay, t, language } = useKobi();
   const [query, setQuery] = useState('');
   if (!showSearchOverlay) return null;
-  const results = query.length > 1 ? [
+  const results = query.length > 1 ? (language === 'sk' ? [
+    { type:'message', text:'Chyba F-304 na Siemens S7-1500 — nadprúd motora, kontrola vinutia', channel:'#machine-siemens-s7-1500', user:'Jozef Novák', time:'Dnes 09:14' },
+    { type:'message', text:'Remeň 3M-225-6 vymenený, napätie 4,5 N potvrdené meračom Gates', channel:'#machine-siemens-s7-1500', user:'Kobi', time:'Dnes 09:41' },
+    { type:'message', text:'Nezarovnanie zváracieho oblúka na KR 60-3 — odchýlka TCP po výmene hrotu', channel:'#incidents', user:'Martin Horváth', time:'Včera' },
+    { type:'doc', text:'Siemens SINAMICS S120 Fault Manual — F-304 Nadprúd motorového modulu', ref:'247 strán · indexované 12. mar 2026' },
+    { type:'doc', text:'KUKA System Software KSS 8.6 — Procedúra kalibrácie TCP', ref:'312 strán · indexované 5. feb 2026' },
+  ] : [
     { type:'message', text:'F-304 error on Siemens S7-1500 — motor overcurrent, winding check required', channel:'#machine-siemens-s7-1500', user:'Jozef Novák', time:'Today 09:14' },
     { type:'message', text:'Timing belt 3M-225-6 replaced, tension 4.5N confirmed with Gates gauge', channel:'#machine-siemens-s7-1500', user:'Kobi', time:'Today 09:41' },
     { type:'message', text:'Welding arc misalignment on KR 60-3 — TCP deviation after tip change', channel:'#incidents', user:'Martin Horváth', time:'Yesterday' },
     { type:'doc', text:'Siemens SINAMICS S120 Fault Manual — F-304 Motor Module Overcurrent', ref:'247 pages · indexed 12 Mar 2026' },
     { type:'doc', text:'KUKA System Software KSS 8.6 — TCP Calibration Procedure', ref:'312 pages · indexed 5 Feb 2026' },
-  ] : [];
+  ]) : [];
   return React.createElement('div', {
     style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',zIndex:300,display:'flex',alignItems:'flex-start',justifyContent:'center',paddingTop:80},
     onClick:e=>{ if(e.target===e.currentTarget) setShowSearchOverlay(false); }
@@ -432,9 +460,9 @@ function SearchOverlay() {
     React.createElement('div', { style:{background:'#fff',borderRadius:14,width:'100%',maxWidth:640,boxShadow:'0 20px 60px rgba(0,0,0,0.2)',overflow:'hidden'} },
       React.createElement('div', { style:{padding:'14px 18px',borderBottom:'1px solid #EBEEF2',display:'flex',alignItems:'center',gap:10} },
         window.Icons && window.Icons.search(16,'#8B97A3'),
-        React.createElement('input', { autoFocus:true,value:query,onChange:e=>setQuery(e.target.value),placeholder:'Search messages, documents, notes…',
+        React.createElement('input', { autoFocus:true,value:query,onChange:e=>setQuery(e.target.value),placeholder: t('searchPlaceholder'),
           style:{flex:1,border:'none',outline:'none',fontSize:15,color:'#1A2433'} }),
-        React.createElement('button', { onClick:()=>setShowSearchOverlay(false), style:{background:'none',border:'none',cursor:'pointer',color:'#8B97A3',fontSize:13} }, 'Esc')
+        React.createElement('button', { onClick:()=>setShowSearchOverlay(false), style:{background:'none',border:'none',cursor:'pointer',color:'#8B97A3',fontSize:13} }, t('searchEsc'))
       ),
       results.length>0 && React.createElement('div', { style:{padding:'8px 0',maxHeight:380,overflowY:'auto'} },
         results.map((r,i)=>React.createElement('div', { key:i, onClick:()=>setShowSearchOverlay(false),
@@ -449,7 +477,7 @@ function SearchOverlay() {
           )
         ))
       ),
-      query.length<=1 && React.createElement('div',{style:{padding:'28px 18px',textAlign:'center',color:'#9BA8B4',fontSize:14}},'Type to search messages, documents, notes…')
+      query.length<=1 && React.createElement('div',{style:{padding:'28px 18px',textAlign:'center',color:'#9BA8B4',fontSize:14}}, t('searchHint'))
     )
   );
 }

@@ -15,9 +15,9 @@ function Sidebar() {
   ].filter(u => u.id !== (role === 'manager' ? 'martin' : 'jozef'));
 
   const otherChannels = [
-    { slug: 'general',   name: 'General',    icon: I.general },
-    { slug: 'incidents', name: 'Incidents',  icon: I.alert,   mentions: 1 },
-    { slug: 'docs-drop', name: 'Docs Drop',  icon: I.inbox },
+    { slug: 'general',   name: t('navGeneral'),    icon: I.general },
+    { slug: 'incidents', name: t('navIncidents'),  icon: I.alert,   mentions: 1 },
+    { slug: 'docs-drop', name: t('navDocsDrop'),  icon: I.inbox },
   ];
 
   const machineList = buildMachineNavEntries(activeWorkspaceId, t);
@@ -89,14 +89,14 @@ function Sidebar() {
     React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: '6px 0' } },
 
       // Overview
-      React.createElement(SectionHeader, { label: 'Overview', sectionKey: 'overview' }),
+      React.createElement(SectionHeader, { label: t('navOverview'), sectionKey: 'overview' }),
       expandedSection.overview && React.createElement(NavBtn, { isActive: activeChannel === 'dashboard', onClick: () => { setActiveChannel('dashboard'); setSidebarOpen(false); } },
         I.barChart(18, activeChannel === 'dashboard' ? '#4CAF50' : TEXT_COLOR),
-        React.createElement('span', null, 'Dashboard')
+        React.createElement('span', null, t('navDashboard'))
       ),
 
       // Machines
-      React.createElement(SectionHeader, { label: 'Machines', sectionKey: 'machines' }),
+      React.createElement(SectionHeader, { label: t('navMachines'), sectionKey: 'machines' }),
       expandedSection.machines && machineList.map(m =>
         React.createElement('div', { key: m.slug },
           React.createElement(NavBtn, {
@@ -114,7 +114,7 @@ function Sidebar() {
       ),
 
       // Channels
-      React.createElement(SectionHeader, { label: 'Channels', sectionKey: 'channels' }),
+      React.createElement(SectionHeader, { label: t('channels'), sectionKey: 'channels' }),
       expandedSection.channels && otherChannels.map(ch =>
         React.createElement(NavBtn, { key: ch.slug, isActive: activeChannel === ch.slug, onClick: () => { setActiveChannel(ch.slug); setSidebarOpen(false); } },
           ch.icon(18, activeChannel === ch.slug ? '#4CAF50' : TEXT_COLOR),
@@ -124,7 +124,7 @@ function Sidebar() {
       ),
 
       // Direct messages
-      React.createElement(SectionHeader, { label: 'Direct Messages', sectionKey: 'dms' }),
+      React.createElement(SectionHeader, { label: t('directMessages'), sectionKey: 'dms' }),
       expandedSection.dms && dms.map(u =>
         React.createElement(NavBtn, { key: u.id, isActive: activeChannel === 'dm-' + u.id, onClick: () => { setActiveChannel('dm-' + u.id); setSidebarOpen(false); } },
           React.createElement('div', { style: { position: 'relative', flexShrink: 0 } },
@@ -133,7 +133,7 @@ function Sidebar() {
           ),
           React.createElement('div', { style: { flex: 1, minWidth: 0 } },
             React.createElement('div', { style: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 14 } }, u.name),
-            u.isBot && React.createElement('div', { style: { fontSize: 10, color: MUTED_COLOR } }, 'AI Assistant')
+            u.isBot && React.createElement('div', { style: { fontSize: 10, color: MUTED_COLOR } }, t('aiAssistant'))
           )
         )
       )

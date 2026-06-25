@@ -8,7 +8,7 @@ function TopBar() {
   const Ws = window.WorkspaceSwitcher;
   const compactNav = deviceMode === 'mobile' || deviceMode === 'tablet';
 
-  const langs = ['EN','SK','CZ','DE','PL'];
+  const langs = ['EN','SK'];
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
 

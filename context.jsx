@@ -11,6 +11,30 @@ function getDeviceModeFromWidth(width) {
   return 'desktop';
 }
 
+const SEED_CHANNEL_KEYS = ['general', 'machine-siemens', 'machine-kuka', 'machine-zund', 'docs-drop'];
+
+function mergeMessages(seeded, current) {
+  const seedIds = new Set(seeded.map((m) => m.id));
+  const userAdded = (current || []).filter((m) => !seedIds.has(m.id));
+  return [...seeded, ...userAdded];
+}
+
+function buildInitialMessages(lang) {
+  const d = window.KobiData;
+  const bundle = d.getLocalizedBundle ? d.getLocalizedBundle(lang) : { conversations: d.conversations, incidents: d.incidents };
+  const conv = bundle.conversations;
+  const msgs = {
+    general: conv.general,
+    'machine-siemens': conv['machine-siemens'],
+    'machine-kuka': conv['machine-kuka'],
+    'machine-zund': conv['machine-zund'],
+    'docs-drop': conv['docs-drop'],
+    incidents: bundle.incidents.map((inc) => ({ id: inc.id, isIncidentCard: true, incident: inc })),
+    dashboard: [],
+  };
+  return msgs;
+}
+
 function KobiProvider({ children }) {
   const [role, setRole] = useState('manager');
   const [language, setLanguage] = useState('en');
@@ -37,23 +61,43 @@ function KobiProvider({ children }) {
   /** Set when opening #docs-drop from a machine’s right panel so we can return + show correct breadcrumbs. */
   const [channelReturnContext, setChannelReturnContext] = useState(null);
 
-  // messages: channelSlug -> Message[]
-  const [messages, setMessages] = useState(() => {
-    const d = window.KobiData;
-    return {
-      general: d.conversations.general,
-      'machine-siemens': d.conversations['machine-siemens'],
-      'machine-kuka': d.conversations['machine-kuka'],
-      'machine-zund': d.conversations['machine-zund'],
-      'docs-drop': d.conversations['docs-drop'],
-      incidents: d.incidents.map(inc => ({ id: inc.id, isIncidentCard: true, incident: inc })),
-      dashboard: [],
-    };
-  });
+  const [messages, setMessages] = useState(() => buildInitialMessages('en'));
+  const isFirstLangRender = useRef(true);
 
   const t = useCallback((key) => {
     const map = window.KobiData.i18n[language] || window.KobiData.i18n.en;
     return map[key] || window.KobiData.i18n.en[key] || key;
+  }, [language]);
+
+  const getLocalized = useCallback(() => {
+    const d = window.KobiData;
+    return d.getLocalizedBundle ? d.getLocalizedBundle(language) : {
+      conversations: d.conversations,
+      incidents: d.incidents,
+      predictiveAlerts: d.predictiveAlerts,
+      machineOperational: d.machineOperational,
+      voicePrefills: d.voicePrefills,
+      knowledgePanel: null,
+      dashboardIncidents: null,
+      machines: d.machines,
+    };
+  }, [language]);
+
+  useEffect(() => {
+    if (isFirstLangRender.current) {
+      isFirstLangRender.current = false;
+      return;
+    }
+    const seeded = buildInitialMessages(language);
+    setMessages((prev) => {
+      const next = { ...seeded };
+      SEED_CHANNEL_KEYS.forEach((ch) => {
+        next[ch] = mergeMessages(seeded[ch], prev[ch]);
+      });
+      next.incidents = mergeMessages(seeded.incidents, prev.incidents);
+      next.dashboard = prev.dashboard || [];
+      return next;
+    });
   }, [language]);
 
   const addMessage = useCallback((channelSlug, msg) => {
@@ -130,6 +174,7 @@ function KobiProvider({ children }) {
     messages, addMessage,
     toasts, addToast,
     t,
+    getLocalized,
   };
 
   return React.createElement(KobiCtx.Provider, { value }, children);

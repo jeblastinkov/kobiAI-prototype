@@ -78,7 +78,7 @@ function HorizontalBarChart({ data, maxVal, color = '#4d0a52' }) {
 
 /* ─── KPI card ─── */
 
-function KpiCard({ label, value, unit, trend, trendDir, sparkData, sparkKey, pulse, color }) {
+function KpiCard({ label, value, unit, trend, trendDir, sparkData, sparkKey, pulse, color, t }) {
   const [displayVal, setDisplayVal] = useState(value);
   const [pulsing, setPulsing] = useState(false);
   useEffect(() => {
@@ -106,7 +106,7 @@ function KpiCard({ label, value, unit, trend, trendDir, sparkData, sparkKey, pul
     ),
     trend !== undefined && React.createElement('div', { style: { display: 'inline-flex', alignItems: 'center', gap: 5, background: trendBg, borderRadius: 20, padding: '3px 10px', marginBottom: 10 } },
       React.createElement('span', { style: { fontSize: 12, color: trendColor, fontWeight: 700 } },
-        `${isDown ? '▼' : '▲'} ${Math.abs(trend)}${typeof trend === 'number' && Math.abs(trend) < 20 ? '%' : ''} ${isDown ? 'improvement' : 'this week'}`
+        `${isDown ? '▼' : '▲'} ${Math.abs(trend)}${typeof trend === 'number' && Math.abs(trend) < 20 ? '%' : ''} ${isDown ? t('trendImprovement') : t('trendThisWeek')}`
       )
     ),
     sparkData && React.createElement(LineChart, { data: sparkData, xKey: 'week', yKey: sparkKey, color: color || '#4d0a52', height: 36, showArea: false })
@@ -116,30 +116,32 @@ function KpiCard({ label, value, unit, trend, trendDir, sparkData, sparkKey, pul
 /* ─── Incidents table ─── */
 
 function IncidentsTable() {
-  const { setRightPanel, setActiveChannel } = useKobi();
-  const rows = [
+  const { setRightPanel, setActiveChannel, t, getLocalized } = useKobi();
+  const localized = getLocalized();
+  const defaultRows = [
     { time: 'Today 09:14', machine: 'Siemens S7-1500', issue: 'F-304 Overcurrent', status: 'resolved',           resolvedBy: 'J. Novák' },
     { time: 'Today 08:45', machine: 'KUKA KR 60-3',    issue: 'Welding arc misalignment', status: 'in-progress', resolvedBy: 'M. Horváth' },
     { time: 'Yesterday',   machine: 'Zünd G3 Cutting', issue: 'Belt tension warning', status: 'resolved',         resolvedBy: 'P. Kováč' },
     { time: 'Yesterday',   machine: 'Conveyor L4',     issue: 'Sensor calibration drift', status: 'open',         resolvedBy: '—' },
     { time: '2 days ago',  machine: 'KUKA KR 60-3',    issue: 'TCP calibration alert', status: 'resolved',        resolvedBy: 'M. Horváth' },
   ];
+  const rows = localized.dashboardIncidents || defaultRows;
   const statusStyle = {
-    resolved:          { color: '#2E7D32', bg: '#E8F5E9', label: 'Resolved' },
-    'in-progress':     { color: '#E65100', bg: '#FFF3E0', label: 'In Progress' },
-    open:              { color: '#B71C1C', bg: '#FFEBEE', label: 'Open' },
-    'awaiting-approval': { color: '#E65100', bg: '#FFF3E0', label: 'Awaiting' },
+    resolved:          { color: '#2E7D32', bg: '#E8F5E9', labelKey: 'status_resolved' },
+    'in-progress':     { color: '#E65100', bg: '#FFF3E0', labelKey: 'status_in_progress' },
+    open:              { color: '#B71C1C', bg: '#FFEBEE', labelKey: 'status_open' },
+    'awaiting-approval': { color: '#E65100', bg: '#FFF3E0', labelKey: 'status_awaiting_approval' },
   };
 
   return React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, overflowX: 'auto', overflowY: 'hidden', minWidth: 0 } },
     React.createElement('div', { style: { padding: '16px 20px', borderBottom: '1px solid #E8ECF0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
-      React.createElement('div', { style: { fontWeight: 700, fontSize: 15, color: '#1A2433' } }, 'Recent Incidents'),
-      React.createElement('button', { style: { padding: '5px 12px', background: '#F3EAF5', border: '1px solid #C9A8D0', borderRadius: 8, fontSize: 12, color: '#4d0a52', cursor: 'pointer', fontWeight: 600 } }, 'View all →')
+      React.createElement('div', { style: { fontWeight: 700, fontSize: 15, color: '#1A2433' } }, t('recentIncidents')),
+      React.createElement('button', { style: { padding: '5px 12px', background: '#F3EAF5', border: '1px solid #C9A8D0', borderRadius: 8, fontSize: 12, color: '#4d0a52', cursor: 'pointer', fontWeight: 600 } }, t('viewAll'))
     ),
     React.createElement('table', { style: { width: '100%', borderCollapse: 'collapse', fontSize: 13 } },
       React.createElement('thead', null,
         React.createElement('tr', { style: { background: '#F7F9FB' } },
-          ['Time', 'Machine', 'Issue', 'Status', 'Resolved By'].map(h =>
+          [t('colTime'), t('colMachine'), t('colIssue'), t('colStatus'), t('colResolvedBy')].map(h =>
             React.createElement('th', { key: h, style: { padding: '10px 16px', textAlign: 'left', color: '#8B97A3', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' } }, h)
           )
         )
@@ -166,7 +168,7 @@ function IncidentsTable() {
             React.createElement('td', { style: { padding: '12px 16px', fontWeight: 600, color: '#1A2433' } }, r.machine),
             React.createElement('td', { style: { padding: '12px 16px', color: '#555' } }, r.issue),
             React.createElement('td', { style: { padding: '12px 16px' } },
-              React.createElement('span', { style: { background: st.bg, color: st.color, borderRadius: 20, padding: '3px 10px', fontSize: 12, fontWeight: 600 } }, st.label)
+              React.createElement('span', { style: { background: st.bg, color: st.color, borderRadius: 20, padding: '3px 10px', fontSize: 12, fontWeight: 600 } }, t(st.labelKey))
             ),
             React.createElement('td', { style: { padding: '12px 16px', color: '#6B8EAE' } }, r.resolvedBy)
           );
@@ -179,17 +181,18 @@ function IncidentsTable() {
 /* ─── Alerts panel ─── */
 
 function AlertsPanel() {
-  const { addToast } = useKobi();
+  const { addToast, t, getLocalized } = useKobi();
   const I = window.Icons;
   const [dismissed, setDismissed] = useState([]);
-  const { predictiveAlerts } = window.KobiData;
+  const localized = getLocalized();
+  const predictiveAlerts = localized.predictiveAlerts;
   const visible = predictiveAlerts.filter(a => !dismissed.includes(a.id));
 
   return React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, overflow: 'hidden' } },
-    React.createElement('div', { style: { padding: '16px 18px', borderBottom: '1px solid #E8ECF0', fontWeight: 700, fontSize: 15, color: '#1A2433', display: 'flex', alignItems: 'center', gap: 8 } }, I && I.zap(18, '#FF9800'), 'Predictive Alerts'),
+    React.createElement('div', { style: { padding: '16px 18px', borderBottom: '1px solid #E8ECF0', fontWeight: 700, fontSize: 15, color: '#1A2433', display: 'flex', alignItems: 'center', gap: 8 } }, I && I.zap(18, '#FF9800'), t('predictiveAlertsTitle')),
     React.createElement('div', { style: { padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 } },
       visible.length === 0
-        ? React.createElement('div', { style: { color: '#8B97A3', fontSize: 13, padding: 8, textAlign: 'center' } }, 'All clear — no active alerts')
+        ? React.createElement('div', { style: { color: '#8B97A3', fontSize: 13, padding: 8, textAlign: 'center' } }, t('allClearAlerts'))
         : visible.map(alert =>
             React.createElement('div', { key: alert.id,
               style: { background: alert.type === 'warning' ? '#FFF8E1' : '#E3F2FD', border: `1px solid ${alert.type === 'warning' ? '#FFD54F' : '#90CAF9'}`, borderRadius: 10, padding: '12px 14px' }
@@ -202,8 +205,8 @@ function AlertsPanel() {
                 )
               ),
               React.createElement('div', { style: { display: 'flex', gap: 8 } },
-                React.createElement('button', { onClick: () => setDismissed(d => [...d, alert.id]), style: { padding: '4px 12px', border: '1px solid #C5D0DB', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, color: '#555' } }, 'Dismiss'),
-                React.createElement('button', { onClick: () => addToast('Opening incident form…', 'info'), style: { padding: '4px 12px', border: 'none', borderRadius: 7, background: '#4d0a52', cursor: 'pointer', fontSize: 12, color: '#fff', fontWeight: 600 } }, 'Create incident')
+                React.createElement('button', { onClick: () => setDismissed(d => [...d, alert.id]), style: { padding: '4px 12px', border: '1px solid #C5D0DB', borderRadius: 7, background: '#fff', cursor: 'pointer', fontSize: 12, color: '#555' } }, t('dismiss')),
+                React.createElement('button', { onClick: () => addToast(t('openingIncidentForm'), 'info'), style: { padding: '4px 12px', border: 'none', borderRadius: 7, background: '#4d0a52', cursor: 'pointer', fontSize: 12, color: '#fff', fontWeight: 600 } }, t('createIncident'))
               )
             )
           )
@@ -228,53 +231,53 @@ function DashboardView() {
   }, []);
 
   const kpis = [
-    { key: 0, label: 'MTTR', value: dashboardKPIs.mttr.value, unit: 'min', trend: dashboardKPIs.mttr.trend, trendDir: 'down', sparkData: mttrData, sparkKey: 'mttr', color: '#4d0a52' },
-    { key: 1, label: 'Open Incidents', value: openIncidentCount, trend: 2, trendDir: 'up', color: '#B71C1C' },
-    { key: 2, label: 'AI Queries Today', value: dashboardKPIs.aiQueriesToday.value, trend: dashboardKPIs.aiQueriesToday.trend, trendDir: 'up', sparkData: aiQueryData.slice(-12), sparkKey: 'queries', color: '#2E7D32' },
-    { key: 3, label: 'Knowledge Notes', value: dashboardKPIs.knowledgeNotes.value, trend: dashboardKPIs.knowledgeNotes.trend, trendDir: 'up', color: '#1565C0' },
+    { key: 0, label: t('mttr'), value: dashboardKPIs.mttr.value, unit: 'min', trend: dashboardKPIs.mttr.trend, trendDir: 'down', sparkData: mttrData, sparkKey: 'mttr', color: '#4d0a52' },
+    { key: 1, label: t('openIncidents'), value: openIncidentCount, trend: 2, trendDir: 'up', color: '#B71C1C' },
+    { key: 2, label: t('aiQueries'), value: dashboardKPIs.aiQueriesToday.value, trend: dashboardKPIs.aiQueriesToday.trend, trendDir: 'up', sparkData: aiQueryData.slice(-12), sparkKey: 'queries', color: '#2E7D32' },
+    { key: 3, label: t('knowledgNotes'), value: dashboardKPIs.knowledgeNotes.value, trend: dashboardKPIs.knowledgeNotes.trend, trendDir: 'up', color: '#1565C0' },
   ];
 
   return React.createElement('div', { style: { padding: compact ? '14px 12px' : '24px 24px', overflowY: 'auto', height: '100%', boxSizing: 'border-box', background: '#F5F6F8', minWidth: 0 } },
     // Header
     React.createElement('div', { style: { marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 } },
       React.createElement('div', null,
-        React.createElement('h1', { style: { fontSize: 20, fontWeight: 800, color: '#1A2433', margin: 0 } }, 'Manager Dashboard'),
-        React.createElement('div', { style: { fontSize: 13, color: '#8B97A3', marginTop: 3 } }, 'Bratislava Plant · rolling 30 days')
+        React.createElement('h1', { style: { fontSize: 20, fontWeight: 800, color: '#1A2433', margin: 0 } }, t('dashboard')),
+        React.createElement('div', { style: { fontSize: 13, color: '#8B97A3', marginTop: 3 } }, t('dashSubtitle'))
       ),
       React.createElement('div', { style: { display: 'flex', gap: 10, alignItems: 'center' } },
-        React.createElement('span', { style: { background: '#F3EAF5', border: '1px solid #C9A8D0', borderRadius: 20, padding: '5px 14px', fontSize: 13, color: '#4d0a52', fontWeight: 600 } }, 'Factory: Bratislava Plant ▾'),
+        React.createElement('span', { style: { background: '#F3EAF5', border: '1px solid #C9A8D0', borderRadius: 20, padding: '5px 14px', fontSize: 13, color: '#4d0a52', fontWeight: 600 } }, t('factoryLabel')),
         React.createElement('span', { style: { width: 9, height: 9, borderRadius: '50%', background: '#4CAF50', display: 'inline-block', animation: 'pulse 2s infinite' } })
       )
     ),
 
     // KPIs
     React.createElement('div', { style: { display: 'flex', gap: 14, marginBottom: 20, flexWrap: 'wrap' } },
-      kpis.map(kpi => React.createElement(KpiCard, { key: kpi.key, ...kpi, pulse: pulseIdx === kpi.key }))
+      kpis.map(kpi => React.createElement(KpiCard, { key: kpi.key, ...kpi, pulse: pulseIdx === kpi.key, t }))
     ),
 
     // Charts row 1
     React.createElement('div', { style: { display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit,minmax(300px,1fr))', gap: 16, marginBottom: 16 } },
       React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, padding: '18px 20px' } },
-        React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 16 } }, 'Incidents by Machine'),
+        React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 16 } }, t('incidentsByMachine')),
         React.createElement(HorizontalBarChart, { data: incidentsByMachine, maxVal: 12, color: '#4d0a52' })
       ),
       React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, padding: '18px 20px' } },
-        React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 4 } }, 'AI Query Volume — last 30 days'),
-        React.createElement('div', { style: { fontSize: 12, color: '#9BA8B4', marginBottom: 10 } }, 'Zünd docs ingested on day 20 caused jump'),
-        React.createElement(LineChart, { data: aiQueryData, xKey: 'day', yKey: 'queries', color: '#2E7D32', height: 100, annotation: { idx: 19, label: 'Zünd docs' } })
+        React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 4 } }, t('aiQueryVolume')),
+        React.createElement('div', { style: { fontSize: 12, color: '#9BA8B4', marginBottom: 10 } }, t('aiQueryHint')),
+        React.createElement(LineChart, { data: aiQueryData, xKey: 'day', yKey: 'queries', color: '#2E7D32', height: 100, annotation: { idx: 19, label: t('chartAnnotationZund') } })
       )
     ),
 
     // Charts row 2
     React.createElement('div', { style: { display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit,minmax(300px,1fr))', gap: 16, marginBottom: 20 } },
       React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, padding: '18px 20px' } },
-        React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 4 } }, 'MTTR Trend — 12 weeks'),
-        React.createElement('div', { style: { fontSize: 12, color: '#2E7D32', fontWeight: 600, marginBottom: 10 } }, '▼ 12% since KobiKan deployment (W7)'),
-        React.createElement(LineChart, { data: mttrData, xKey: 'week', yKey: 'mttr', color: '#4d0a52', height: 100, annotation: { idx: 6, label: 'KobiKan' }, unit: 'min' })
+        React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 4 } }, t('mttrTrend')),
+        React.createElement('div', { style: { fontSize: 12, color: '#2E7D32', fontWeight: 600, marginBottom: 10 } }, t('mttrHint')),
+        React.createElement(LineChart, { data: mttrData, xKey: 'week', yKey: 'mttr', color: '#4d0a52', height: 100, annotation: { idx: 6, label: t('chartAnnotationKobi') }, unit: 'min' })
       ),
       React.createElement('div', { style: { background: '#fff', border: '1px solid #E8ECF0', borderRadius: 14, padding: '18px 20px' } },
-        React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 4 } }, 'Knowledge Base Growth'),
-        React.createElement('div', { style: { fontSize: 12, color: '#9BA8B4', marginBottom: 10 } }, '12,340 chunks across all machines'),
+        React.createElement('div', { style: { fontWeight: 700, fontSize: 14, color: '#1A2433', marginBottom: 4 } }, t('knowledgeGrowth')),
+        React.createElement('div', { style: { fontSize: 12, color: '#9BA8B4', marginBottom: 10 } }, t('knowledgeHint')),
         React.createElement(LineChart, { data: knowledgeData, xKey: 'week', yKey: 'chunks', color: '#1565C0', height: 100 })
       )
     ),
